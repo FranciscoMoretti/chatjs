@@ -157,6 +157,29 @@ vercel link
 vercel env pull .env.local
 ```
 
+## Rate Limiting and Security
+
+The `/api/chat` endpoint is expensive (it calls AI providers on every request). Protect it from abuse in production.
+
+### Vercel Firewall
+
+Enable [Vercel Firewall](https://vercel.com/docs/security/vercel-firewall) in your project settings. Create a rate limiting rule for the chat endpoint:
+
+1. Go to **Settings** → **Firewall**
+2. Add a rule targeting `POST /api/chat`
+3. Set a rate limit (for example, 20 requests per minute per IP)
+4. Choose **Challenge** or **Block** as the action
+
+### Vercel WAF
+
+For additional protection, enable the [Web Application Firewall](https://vercel.com/docs/security/vercel-waf) to block common attack patterns (SQL injection, XSS) at the edge before requests reach your application.
+
+### Environment Variable Security
+
+- Never commit `.env.local` to version control
+- Use Vercel's [environment variable management](https://vercel.com/docs/projects/environment-variables) to set secrets per environment (production, preview, development)
+- Rotate `AUTH_SECRET` and API keys periodically
+
 ## Production Checklist
 
 Before going live:
@@ -173,6 +196,9 @@ Before going live:
     https://yourdomain.com/api/auth/callback/github
     https://yourdomain.com/api/auth/callback/google
     ```
+  </Accordion>
+  <Accordion title="Enable rate limiting">
+    Set up [Vercel Firewall](#vercel-firewall) rules for the `/api/chat` endpoint to prevent abuse. See the section above for details.
   </Accordion>
   <Accordion title="Set up monitoring">
     - Enable [Vercel Analytics](https://vercel.com/analytics) for web vitals

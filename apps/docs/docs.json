@@ -54,6 +54,7 @@
             "group": "Customization",
             "pages": [
               "customization/theming",
+              "customization/fonts",
               "customization/branding",
               "customization/models",
               "customization/prompts"
