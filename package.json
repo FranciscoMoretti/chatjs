@@ -23,6 +23,8 @@
 		"test:unit": "bun test ./.agents/skills/worktree-ports/scripts/worktree-runtime.test.ts && turbo run test:unit",
 		"test:types": "turbo run test:types",
 		"docs:links": "turbo run docs:links --filter=@chatjs/docs",
+		"test:visual:docs": "bun --filter=@chatjs/docs run test:visual",
+		"uiverify:docs": "uiverify upload --static-dir apps/docs/uiverify-archive",
 		"template:sync": "bun scripts/sync-template.ts",
 		"template:check": "bun scripts/sync-template.ts --check",
 		"chat-js": "bun --filter @chat-js/cli start",
@@ -43,8 +45,13 @@
 	"devDependencies": {
 		"@changesets/changelog-github": "^0.5.2",
 		"@changesets/cli": "^2.29.8",
+		"@uiverify/vitest": "^1.2.1",
+		"@vitest/browser-playwright": "^4.1.11",
 		"dotenv-cli": "^8.0.0",
-		"turbo": "2.10.12"
+		"playwright": "^1.59.1",
+		"turbo": "2.10.12",
+		"uiverify": "^1.4.2",
+		"vitest": "^4.1.11"
 	},
 	"engines": {
 		"node": ">=22"
