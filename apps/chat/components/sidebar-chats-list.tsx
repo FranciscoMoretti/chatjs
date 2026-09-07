@@ -6,7 +6,7 @@ import {
   useGetAllChats,
   usePinChat,
   useRenameChat,
-} from "@/hooks/chat-sync-hooks";
+} from "@/hooks/chat-history-hooks";
 import type { UIChat } from "@/lib/types/ui-chat";
 import { parseChatIdFromPathname } from "@/providers/parse-chat-id-from-pathname";
 import { DeleteChatDialog } from "./delete-chat-dialog";

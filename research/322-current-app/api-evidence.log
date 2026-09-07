@@ -1,0 +1,182 @@
+[getChatsByUserId] Starting {
+  userId: "alice",
+  projectId: undefined,
+  projectIdType: "undefined",
+  projectIdIsNull: false,
+  projectIdIsUndefined: true,
+}
+[getChatsByUserId] Using all chats condition
+[getChatsByUserId] Executing query
+[getChatsByUserId] Query completed {
+  count: 3,
+  sampleChat: {
+    id: "513a763f-9288-433e-82fd-b62e7dc30ec9",
+    updatedAt: 2026-01-03T00:00:00.000Z,
+    updatedAtType: "object",
+  },
+}
+[getChatsByUserId] Starting {
+  userId: "alice",
+  projectId: null,
+  projectIdType: "object",
+  projectIdIsNull: true,
+  projectIdIsUndefined: false,
+}
+[getChatsByUserId] Using null project condition
+[getChatsByUserId] Executing query
+[getChatsByUserId] Query completed {
+  count: 2,
+  sampleChat: {
+    id: "513a763f-9288-433e-82fd-b62e7dc30ec9",
+    updatedAt: 2026-01-03T00:00:00.000Z,
+    updatedAtType: "object",
+  },
+}
+[getChatsByUserId] Starting {
+  userId: "alice",
+  projectId: "52755c3b-c5eb-400e-9d44-463adf29ee35",
+  projectIdType: "string",
+  projectIdIsNull: false,
+  projectIdIsUndefined: false,
+}
+[getChatsByUserId] Using specific project condition {
+  projectId: "52755c3b-c5eb-400e-9d44-463adf29ee35",
+}
+[getChatsByUserId] Executing query
+[getChatsByUserId] Query completed {
+  count: 1,
+  sampleChat: {
+    id: "185c75d5-2ed7-48f7-a0d0-cf704b8b3c29",
+    updatedAt: 2026-01-02T00:00:00.000Z,
+    updatedAtType: "object",
+  },
+}
+[getChatsByUserId] Starting {
+  userId: "bob",
+  projectId: "52755c3b-c5eb-400e-9d44-463adf29ee35",
+  projectIdType: "string",
+  projectIdIsNull: false,
+  projectIdIsUndefined: false,
+}
+[getChatsByUserId] Using specific project condition {
+  projectId: "52755c3b-c5eb-400e-9d44-463adf29ee35",
+}
+[getChatsByUserId] Executing query
+[getChatsByUserId] Query completed {
+  count: 0,
+  sampleChat: null,
+}
+[getAllChats] Starting {
+  userId: "alice",
+  projectId: undefined,
+  inputType: "undefined",
+}
+[getChatsByUserId] Starting {
+  userId: "alice",
+  projectId: undefined,
+  projectIdType: "undefined",
+  projectIdIsNull: false,
+  projectIdIsUndefined: true,
+}
+[getChatsByUserId] Using all chats condition
+[getChatsByUserId] Executing query
+[getChatsByUserId] Query completed {
+  count: 3,
+  sampleChat: {
+    id: "513a763f-9288-433e-82fd-b62e7dc30ec9",
+    updatedAt: 2026-01-03T00:00:00.000Z,
+    updatedAtType: "object",
+  },
+}
+[getAllChats] Retrieved chats from DB {
+  count: 3,
+  sampleChat: {
+    id: "513a763f-9288-433e-82fd-b62e7dc30ec9",
+    isPinned: false,
+    updatedAt: 2026-01-03T00:00:00.000Z,
+    updatedAtType: "object",
+  },
+}
+[getAllChats] After sorting {
+  count: 3,
+}
+[getAllChats] After mapping to UI {
+  count: 3,
+}
+[getAllChats] Starting {
+  userId: "alice",
+  projectId: null,
+  inputType: "object",
+}
+[getChatsByUserId] Starting {
+  userId: "alice",
+  projectId: null,
+  projectIdType: "object",
+  projectIdIsNull: true,
+  projectIdIsUndefined: false,
+}
+[getChatsByUserId] Using null project condition
+[getChatsByUserId] Executing query
+[getChatsByUserId] Query completed {
+  count: 2,
+  sampleChat: {
+    id: "513a763f-9288-433e-82fd-b62e7dc30ec9",
+    updatedAt: 2026-01-03T00:00:00.000Z,
+    updatedAtType: "object",
+  },
+}
+[getAllChats] Retrieved chats from DB {
+  count: 2,
+  sampleChat: {
+    id: "513a763f-9288-433e-82fd-b62e7dc30ec9",
+    isPinned: false,
+    updatedAt: 2026-01-03T00:00:00.000Z,
+    updatedAtType: "object",
+  },
+}
+[getAllChats] After sorting {
+  count: 2,
+}
+[getAllChats] After mapping to UI {
+  count: 2,
+}
+[getAllChats] Starting {
+  userId: "alice",
+  projectId: "52755c3b-c5eb-400e-9d44-463adf29ee35",
+  inputType: "string",
+}
+[getChatsByUserId] Starting {
+  userId: "alice",
+  projectId: "52755c3b-c5eb-400e-9d44-463adf29ee35",
+  projectIdType: "string",
+  projectIdIsNull: false,
+  projectIdIsUndefined: false,
+}
+[getChatsByUserId] Using specific project condition {
+  projectId: "52755c3b-c5eb-400e-9d44-463adf29ee35",
+}
+[getChatsByUserId] Executing query
+[getChatsByUserId] Query completed {
+  count: 1,
+  sampleChat: {
+    id: "185c75d5-2ed7-48f7-a0d0-cf704b8b3c29",
+    updatedAt: 2026-01-02T00:00:00.000Z,
+    updatedAtType: "object",
+  },
+}
+[getAllChats] Retrieved chats from DB {
+  count: 1,
+  sampleChat: {
+    id: "185c75d5-2ed7-48f7-a0d0-cf704b8b3c29",
+    isPinned: false,
+    updatedAt: 2026-01-02T00:00:00.000Z,
+    updatedAtType: "object",
+  },
+}
+[getAllChats] After sorting {
+  count: 1,
+}
+[getAllChats] After mapping to UI {
+  count: 1,
+}
+{"passed":19,"source":"8178650771aed69e75421a988e6c57f69ac131ca","scope":"actual production query + router + protected middleware; injected identity, real isolated Postgres","limits":["minimal Chat test schema without FK/migrations","no HTTP or browser","no live authentication"]}

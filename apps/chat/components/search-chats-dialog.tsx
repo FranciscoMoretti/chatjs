@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useGetAllChats } from "@/hooks/chat-sync-hooks";
+import { useGetAllChats } from "@/hooks/chat-history-hooks";
 import type { UIChat } from "@/lib/types/ui-chat";
 
 interface GroupedChats {
