@@ -1,8 +1,10 @@
+import type { GatewaySelection } from "../registry/gateways";
 import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { PackageManager } from "../types";
+import type { Gateway, PackageManager } from "../types";
+import { configureGatewayProvider } from "./gateway-provider";
 import { normalizeScaffoldedPackageJson } from "./package-manifest";
 import {
   configureStorageProvider,
@@ -385,6 +387,7 @@ export async function scaffoldFromTemplate(
   options?: {
     packageManager?: PackageManager;
     storage?: StorageSelection;
+    gateway?: Gateway | GatewaySelection;
   }
 ): Promise<void> {
   const packageManager = options?.packageManager ?? "bun";
@@ -409,6 +412,7 @@ export async function scaffoldFromTemplate(
     destination,
     options?.storage ?? { provider: "vercel-blob", options: {} }
   );
+  await configureGatewayProvider(destination, options?.gateway ?? "vercel");
   await normalizeChatAppFiles(destination, packageManager);
 }
 
@@ -454,7 +458,7 @@ export async function scaffoldElectron(
 export async function scaffoldFromGit(
   url: string,
   destination: string,
-  options?: { storage?: StorageSelection }
+  options?: { storage?: StorageSelection; gateway?: Gateway | GatewaySelection }
 ): Promise<void> {
   await runCommand(
     "git",
@@ -462,6 +466,9 @@ export async function scaffoldFromGit(
     process.cwd()
   );
   await rm(join(destination, ".git"), { recursive: true, force: true });
+  if (options?.gateway) {
+    await configureGatewayProvider(destination, options.gateway);
+  }
   if (!existsSync(join(destination, "lib", "storage-provider.ts"))) {
     return;
   }

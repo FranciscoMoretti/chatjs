@@ -76,3 +76,7 @@ apps/electron/branding.json
 .devtools
 .cursor/hooks/state
 .codex/environments/
+
+# Generated gateway registry payloads
+packages/registry/items/*-gateway.json
+packages/registry/gateways.json

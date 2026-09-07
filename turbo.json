@@ -40,24 +40,41 @@
       "persistent": true
     },
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**", "build/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".next/**",
+        "dist/**",
+        "build/**"
+      ]
     },
     "format": {
       "cache": false
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": [
+        "^lint"
+      ]
     },
     "test": {
-      "dependsOn": ["^test"],
-      "outputs": ["playwright-report/**", "test-results/**"]
+      "dependsOn": [
+        "^test"
+      ],
+      "outputs": [
+        "playwright-report/**",
+        "test-results/**"
+      ]
     },
     "test:unit": {
-      "dependsOn": ["^test:unit"]
+      "dependsOn": [
+        "^test:unit"
+      ]
     },
     "test:types": {
-      "dependsOn": ["^test:types"]
+      "dependsOn": [
+        "^test:types"
+      ]
     },
     "docs:links": {
       "cache": false
@@ -70,8 +87,17 @@
     },
     "electron:build": {
       "cache": true,
-      "inputs": ["src/**", "package.json", "tsconfig.json", "icon.png", "scripts/**"],
-      "outputs": ["dist/**", "build/**"]
+      "inputs": [
+        "src/**",
+        "package.json",
+        "tsconfig.json",
+        "icon.png",
+        "scripts/**"
+      ],
+      "outputs": [
+        "dist/**",
+        "build/**"
+      ]
     },
     "electron:dev": {
       "cache": false,
@@ -79,11 +105,15 @@
     },
     "electron:publish": {
       "cache": false,
-      "dependsOn": ["electron:build"]
+      "dependsOn": [
+        "electron:build"
+      ]
     },
     "electron:make": {
       "cache": false,
-      "dependsOn": ["electron:build"]
+      "dependsOn": [
+        "electron:build"
+      ]
     },
     "@chat-js/cli#build": {
       "inputs": [
@@ -96,7 +126,9 @@
         "$TURBO_ROOT$/package.json",
         "!$TURBO_ROOT$/apps/{chat,electron}/**/{node_modules,.next,.turbo,build,dist,release,out,playwright,playwright-report,test-results,blob-report}/**",
         "!$TURBO_ROOT$/apps/{chat,electron}/**/{.env,.env.*.local,.env.local,.DS_Store,*.tsbuildinfo,bun.lock,bun.lockb}",
-        "!$TURBO_ROOT$/apps/electron/branding.json"
+        "!$TURBO_ROOT$/apps/electron/branding.json",
+        "$TURBO_ROOT$/packages/registry/gateways/**",
+        "$TURBO_ROOT$/packages/registry/package.json"
       ],
       "outputs": [
         "dist/**",
@@ -104,7 +136,9 @@
       ]
     },
     "@chat-js/cli#test:unit": {
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/apps/chat/**",
@@ -116,11 +150,15 @@
         "$TURBO_ROOT$/packages/registry/items/**",
         "!$TURBO_ROOT$/apps/{chat,electron}/**/{node_modules,.next,.turbo,build,dist,release,out,playwright,playwright-report,test-results,blob-report}/**",
         "!$TURBO_ROOT$/apps/{chat,electron}/**/{.env,.env.*.local,.env.local,.DS_Store,*.tsbuildinfo,bun.lock,bun.lockb}",
-        "!$TURBO_ROOT$/apps/electron/branding.json"
+        "!$TURBO_ROOT$/apps/electron/branding.json",
+        "$TURBO_ROOT$/packages/registry/gateways/**",
+        "$TURBO_ROOT$/packages/registry/package.json"
       ]
     },
     "@chat-js/cli#test:scaffold": {
-      "dependsOn": ["test:unit"],
+      "dependsOn": [
+        "test:unit"
+      ],
       "cache": false,
       "inputs": [
         "$TURBO_DEFAULT$",

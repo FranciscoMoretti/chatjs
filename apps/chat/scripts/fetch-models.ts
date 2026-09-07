@@ -11,10 +11,9 @@ async function fetchAndSaveModels() {
     throw new Error("No models returned from gateway");
   }
 
-  const fileContent = `import type { AiGatewayModel } from "@/lib/ai/ai-gateway-models-schemas";
-import type { GatewayType } from "@/lib/ai/gateways/registry";
+  const fileContent = `import type { AiGatewayModel } from "@chat-js/gateways/models";
 
-export const generatedForGateway = "${gateway.type}" satisfies GatewayType;
+export const generatedForGateway = "${gateway.type}";
 
 export const models = ${JSON.stringify(models, null, 2)} as const satisfies readonly AiGatewayModel[];
 `;

@@ -3,6 +3,14 @@ set -euo pipefail
 
 cli_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Verify local contracts before publication, including external registry installs.
+bun run --cwd "$cli_root" test:gateways
+gateway_archive_dir="$(mktemp -d /tmp/chat-js-gateway-package-XXXXXX)"
+trap 'rm -rf "$gateway_archive_dir"' EXIT
+gateway_archive="$gateway_archive_dir/gateways.tgz"
+bun run --cwd "$cli_root/../gateways" build
+bun pm --cwd "$cli_root/../gateways" pack --filename "$gateway_archive"
+
 run_case() (
   local package_manager="$1"
   local electron_flag="$2"
@@ -43,6 +51,14 @@ run_case() (
   else
     test ! -d "$app_dir/electron"
   fi
+
+  node - "$app_dir/package.json" "$gateway_archive" <<'NODE'
+const fs = require("node:fs");
+const [manifestPath, archivePath] = process.argv.slice(2);
+const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+manifest.dependencies["@chat-js/gateways"] = `file:${archivePath}`;
+fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+NODE
 
   pushd "$app_dir" >/dev/null
   case "$package_manager" in

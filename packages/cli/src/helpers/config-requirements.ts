@@ -1,8 +1,8 @@
+import { builtInGateways } from "../registry/gateways";
 import type {
 	AuthProvider,
 	BuiltInToolKey,
 	CoreFeatureKey,
-	Gateway,
 } from "../types";
 
 type EnvVarName = string;
@@ -12,28 +12,12 @@ export interface EnvRequirement {
 	options: EnvVarName[][];
 }
 
-export const gatewayEnvRequirements: Record<Gateway, EnvRequirement> = {
-	openrouter: {
-		options: [["OPENROUTER_API_KEY"]],
-		description: "OPENROUTER_API_KEY",
-	},
-	openai: {
-		options: [["OPENAI_API_KEY"]],
-		description: "OPENAI_API_KEY",
-	},
-	vercel: {
-		options: [["AI_GATEWAY_API_KEY"], ["VERCEL_OIDC_TOKEN"]],
-		description: "AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN",
-	},
-	"openai-compatible": {
-		options: [["OPENAI_COMPATIBLE_BASE_URL", "OPENAI_COMPATIBLE_API_KEY"]],
-		description: "OPENAI_COMPATIBLE_BASE_URL + OPENAI_COMPATIBLE_API_KEY",
-	},
-	litellm: {
-		options: [["LITELLM_BASE_URL"]],
-		description: "LITELLM_BASE_URL",
-	},
-};
+export const gatewayEnvRequirements: Record<string, EnvRequirement> = Object.fromEntries(
+  builtInGateways.map(item => [item.meta.chatjs.id, {
+    ...item.meta.chatjs.envRequirements[0],
+    description: item.meta.chatjs.envRequirements[0].options.map(option => option.join(" + ")).join(" or "),
+  }])
+);
 
 export const coreFeatureEnvRequirements: Partial<
 	Record<CoreFeatureKey, EnvRequirement>

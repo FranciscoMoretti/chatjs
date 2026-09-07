@@ -8,10 +8,12 @@ import type {
 
 export type { GatewayType } from "@/lib/ai/gateways/registry";
 
-import { GATEWAY_MODEL_DEFAULTS } from "./ai/gateway-model-defaults";
+import {
+  gatewayCapabilities,
+  gatewayModelDefaults,
+} from "./ai/gateway-model-defaults";
+import { DEFAULT_GATEWAY } from "./ai/gateways/registry";
 import type { ToolName } from "./ai/types";
-
-const DEFAULT_GATEWAY = "vercel" as const satisfies GatewayType;
 
 // Helper to create typed model ID schemas
 const toolName = () => z.custom<ToolName>();
@@ -155,28 +157,23 @@ function createAiSchema<G extends GatewayType>(g: G) {
   });
 }
 
-// Record ensures a compile error if a new gateway is added but not here.
-const gatewaySchemaMap: {
-  [G in GatewayType]: ReturnType<typeof createAiSchema<G>>;
-} = {
-  vercel: createAiSchema("vercel"),
-  openrouter: createAiSchema("openrouter"),
-  openai: createAiSchema("openai"),
-  "openai-compatible": createAiSchema("openai-compatible"),
-  litellm: createAiSchema("litellm"),
-};
+const installedGatewaySchema = createAiSchema(DEFAULT_GATEWAY);
 
-export const aiConfigSchema = z
-  .discriminatedUnion("gateway", [
-    gatewaySchemaMap.vercel,
-    gatewaySchemaMap.openrouter,
-    gatewaySchemaMap.openai,
-    gatewaySchemaMap["openai-compatible"],
-    gatewaySchemaMap.litellm,
-  ])
+export const aiConfigSchema = installedGatewaySchema
+  .superRefine((ai, ctx) => {
+    for (const kind of ["image", "video"] as const) {
+      if (ai.tools[kind].enabled && !gatewayCapabilities[kind]) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["tools", kind, "enabled"],
+          message: `The installed gateway does not support ${kind} generation.`,
+        });
+      }
+    }
+  })
   .default({
     gateway: DEFAULT_GATEWAY,
-    ...GATEWAY_MODEL_DEFAULTS[DEFAULT_GATEWAY],
+    ...gatewayModelDefaults,
   });
 
 export const pricingConfigSchema = z.object({
@@ -355,7 +352,7 @@ export const configDescriptionSchema = z.object({
   }),
   authentication: authenticationConfigObjectSchema,
   desktopApp: desktopAppConfigObjectSchema,
-  ai: gatewaySchemaMap.vercel,
+  ai: installedGatewaySchema,
   anonymous: anonymousConfigObjectSchema,
   attachments: attachmentsConfigObjectSchema,
   paths: pathsConfigObjectSchema,
@@ -458,8 +455,8 @@ export type DesktopAppConfig = z.infer<typeof desktopAppConfigSchema>;
 // Gateway-aware input types: model IDs narrowed per gateway for autocomplete
 type ZodConfigInput = z.input<typeof configSchema>;
 
-// Use vercel variant as shape reference (all variants share the same structure)
-type AiShape = z.input<typeof gatewaySchemaMap.vercel>;
+// Model IDs come from the installed gateway.
+type AiShape = z.input<typeof installedGatewaySchema>;
 type AiToolsShape = AiShape["tools"];
 
 // All helper types are Partial — fields not provided are filled by applyDefaults
@@ -567,7 +564,7 @@ function mergeToolsConfig<T extends Record<string, unknown>>(
 // Apply defaults to partial config
 export function applyDefaults(input: ConfigInput): Config {
   const gateway = input.ai?.gateway ?? DEFAULT_GATEWAY;
-  const gatewayDefaults = GATEWAY_MODEL_DEFAULTS[gateway];
+  const gatewayDefaults = gatewayModelDefaults;
   const aiInput = input.ai as Record<string, unknown> | undefined;
 
   const mergedAi = {

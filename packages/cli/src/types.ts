@@ -1,16 +1,8 @@
-import type { GatewayType } from "../../../apps/chat/lib/config-schema";
+import { builtInGateways } from "./registry/gateways";
 
 export type PackageManager = "bun" | "npm" | "pnpm" | "yarn";
-
-export const GATEWAYS: readonly GatewayType[] = [
-  "vercel",
-  "openrouter",
-  "openai",
-  "openai-compatible",
-  "litellm",
-] as const;
-
-export type Gateway = GatewayType;
+export const GATEWAYS = builtInGateways.map(item => item.meta.chatjs.id);
+export type Gateway = string;
 
 export const AUTH_PROVIDERS = ["google", "github", "vercel"] as const;
 

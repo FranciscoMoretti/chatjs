@@ -1,4 +1,4 @@
-import type { AiGatewayModel } from "./ai-gateway-models-schemas";
+import type { AiGatewayModel } from "@chat-js/gateways/models";
 import type { ModelData } from "./model-data";
 
 export function toModelData(model: AiGatewayModel): ModelData {

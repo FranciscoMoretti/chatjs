@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { gatewayModelDefaults } from "@/lib/ai/gateway-model-defaults";
 import type { ChatMessage } from "@/lib/ai/types";
 import { getRetryMessageInput } from "./chat-tree-actions";
 
@@ -9,7 +10,7 @@ function message({
   parallelIndex = null,
   parentMessageId = null,
   role,
-  selectedModel = "openai/gpt-5-mini",
+  selectedModel = gatewayModelDefaults.workflows.chat,
 }: {
   id: string;
   isPrimaryParallel?: boolean | null;
@@ -42,7 +43,7 @@ describe("getRetryMessageInput", () => {
       id: "assistant",
       parentMessageId: root.id,
       role: "assistant",
-      selectedModel: "openai/gpt-5-nano",
+      selectedModel: gatewayModelDefaults.workflows.title,
     });
 
     const result = getRetryMessageInput({
@@ -52,7 +53,7 @@ describe("getRetryMessageInput", () => {
 
     expect(result).toMatchObject({
       ok: true,
-      selectedModelId: "openai/gpt-5-nano",
+      selectedModelId: gatewayModelDefaults.workflows.title,
     });
   });
 
@@ -90,7 +91,9 @@ describe("getRetryMessageInput", () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(result.ok ? result.selectedModelId : null).toBe("openai/gpt-5-mini");
+    expect(result.ok ? result.selectedModelId : null).toBe(
+      gatewayModelDefaults.workflows.chat
+    );
   });
 
   it("reports missing parent messages", () => {

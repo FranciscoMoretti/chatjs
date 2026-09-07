@@ -12,7 +12,8 @@ import {
 	AUTHENTICATION_DEFAULTS,
 	FEATURES_DEFAULTS,
 } from "../../../../apps/chat/lib/config-schema";
-import { GATEWAY_MODEL_DEFAULTS } from "../../../../apps/chat/lib/ai/gateway-model-defaults";
+import { builtInGateways } from "../registry/gateways";
+import type { GatewayDefinition } from "@chat-js/gateways/definition";
 import {
 	authEnvRequirements,
 	builtInToolEnvRequirements,
@@ -40,7 +41,7 @@ import {
 	type StorageSelection,
 } from "./storage-provider";
 
-const defaultTools = GATEWAY_MODEL_DEFAULTS["vercel"].tools;
+const defaultTools = builtInGateways[0].meta.chatjs.defaults.tools;
 
 const CORE_FEATURE_DEFAULTS: Record<CoreFeatureKey, boolean> = {
 	attachments: FEATURES_DEFAULTS.attachments,
@@ -105,8 +106,11 @@ const BUILT_IN_TOOL_HINTS: Record<BuiltInToolKey, string> = {
 	videoGeneration: "Generate videos inside chat",
 };
 
-function isSupportedBuiltInTool(gateway: Gateway, key: BuiltInToolKey): boolean {
-	const gatewayToolDefaults = GATEWAY_MODEL_DEFAULTS[gateway].tools;
+function isSupportedBuiltInTool(
+	gateway: GatewayDefinition,
+	key: BuiltInToolKey,
+): boolean {
+	const gatewayToolDefaults = gateway.defaults.tools;
 
 	if (key === "imageGeneration") {
 		return (
@@ -182,15 +186,30 @@ export async function promptGateway(skipPrompt: boolean): Promise<Gateway> {
 
 	const gateway = await select({
 		message: `Which ${highlighter.info("AI gateway")} would you like to use?`,
-		options: GATEWAYS.map((gw) => ({
-			value: gw,
-			label: gw,
-			hint: gatewayEnvRequirements[gw].description,
-		})),
+		options: [
+			...GATEWAYS.map((gw) => ({
+				value: gw,
+				label: gw,
+				hint: gatewayEnvRequirements[gw].description,
+			})),
+			{
+				value: "__external__",
+				label: "External registry item",
+				hint: "URL or local JSON path",
+			},
+		],
 		initialValue: "vercel" as Gateway,
 	});
 	handleCancel(gateway);
-
+	if (gateway === "__external__") {
+		const source = await text({
+			message: "Gateway registry item URL or local JSON path:",
+			validate: (value) =>
+				value?.trim() ? undefined : "Enter a registry item address",
+		});
+		handleCancel(source);
+		return source.trim();
+	}
 	return gateway;
 }
 
@@ -307,7 +326,7 @@ export async function promptDocumentTypes(
 export async function promptAssistantTools(
 	registryItems: RegistryIndexItem[],
 	skipPrompt: boolean,
-	gateway: Gateway,
+	gateway: GatewayDefinition,
 ): Promise<{
 	builtInTools: Record<BuiltInToolKey, boolean>;
 	installableTools: string[];

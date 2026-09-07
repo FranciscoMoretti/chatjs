@@ -4,18 +4,14 @@ import type {
   LanguageModelV4,
 } from "@ai-sdk/provider";
 import type { ImageModel } from "ai";
-import { env } from "@/lib/env";
-import { createModuleLogger } from "@/lib/logger";
-import type { AiGatewayModel } from "../ai-gateway-models-schemas";
-import { getFallbackModels } from "./fallback-models";
-import type { GatewayProvider } from "./gateway-provider";
+import type { GatewayProvider } from "@chat-js/gateways/gateway-provider";
+import type { AiGatewayModel } from "@chat-js/gateways/models";
 import type {
   ExtractImageModelIdFromProvider,
   ExtractModelIdFromProvider,
   StrictLiterals,
-} from "./provider-types";
-
-const log = createModuleLogger("ai/gateways/openai");
+} from "@chat-js/gateways/provider-types";
+import { GatewayRuntime } from "@chat-js/gateways/runtime";
 
 type OpenaiLanguageModelId = StrictLiterals<
   ExtractModelIdFromProvider<typeof createOpenAI>
@@ -48,6 +44,7 @@ function toAiGatewayModel(model: OpenAIModelResponse): AiGatewayModel {
 }
 
 export class OpenAIGateway
+  extends GatewayRuntime
   implements
     GatewayProvider<"openai", OpenaiLanguageModelId, OpenaiImageModelId, never>
 {
@@ -76,33 +73,32 @@ export class OpenAIGateway
   }
 
   private getApiKey(): string | undefined {
-    return env.OPENAI_API_KEY;
+    return this.env.OPENAI_API_KEY;
   }
 
   async fetchModels(): Promise<AiGatewayModel[]> {
     const apiKey = this.getApiKey();
 
     if (!apiKey) {
-      log.warn("No OPENAI_API_KEY found, using fallback models");
-      return [...getFallbackModels(this.type)];
+      this.log.warn("No OPENAI_API_KEY found, using fallback models");
+      return [...this.getFallbackModels(this.type)];
     }
 
     const url = "https://api.openai.com/v1/models";
-    log.debug({ url }, "Fetching models from OpenAI");
+    this.log.debug({ url }, "Fetching models from OpenAI");
 
     try {
-      const response = await fetch(url, {
+      const response = await this.fetch(url, {
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        next: { revalidate: 3600 },
       });
 
       if (!response.ok) {
-        log.error(
+        this.log.error(
           { status: response.status, statusText: response.statusText, url },
-          "OpenAI returned non-OK response"
+          "OpenAI returned non-OK response",
         );
         throw new Error(`Failed to fetch models: ${response.statusText}`);
       }
@@ -111,17 +107,17 @@ export class OpenAIGateway
       const models = (body.data ?? []) as OpenAIModelResponse[];
       const result = models.map(toAiGatewayModel);
 
-      log.info(
+      this.log.info(
         { modelCount: result.length },
-        "Successfully fetched models from OpenAI"
+        "Successfully fetched models from OpenAI",
       );
       return result;
     } catch (error) {
-      log.error(
+      this.log.error(
         { err: error, url },
-        "Error fetching models from OpenAI, falling back to generated models"
+        "Error fetching models from OpenAI, falling back to generated models",
       );
-      return [...getFallbackModels(this.type)];
+      return [...this.getFallbackModels(this.type)];
     }
   }
 }

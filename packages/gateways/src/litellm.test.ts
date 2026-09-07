@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { LiteLLMGateway } from "./litellm-gateway";
+import { LiteLLMGateway } from "../../registry/gateways/litellm";
 
 const originalBaseURL = process.env.LITELLM_BASE_URL;
 const originalApiKey = process.env.LITELLM_API_KEY;
@@ -22,7 +22,7 @@ function mockModelsFetch() {
             owned_by: "openai",
           },
         ],
-      })
+      }),
     );
   });
   vi.stubGlobal("fetch", fetchMock);
@@ -55,7 +55,6 @@ describe("LiteLLMGateway", () => {
         Authorization: "Bearer sk-test",
         "Content-Type": "application/json",
       },
-      next: { revalidate: 3600 },
     });
     expect(models).toEqual([
       {

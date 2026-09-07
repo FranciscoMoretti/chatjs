@@ -1,7 +1,6 @@
 import { unstable_cache as cache } from "next/cache";
 import { config } from "@/lib/config";
 import type { AppModelId, ModelId } from "./app-model-id";
-import type { GatewayType } from "./gateways/registry";
 import type { ModelData } from "./model-data";
 import { fetchModels } from "./models";
 import {
@@ -116,7 +115,7 @@ export async function getAppModelDefinition(
  * When the snapshot was generated for a different gateway the IDs won't match,
  * so we fall back to an empty set (which auto-enables all models).
  */
-function snapshotMatchesGateway(gateway: GatewayType): boolean {
+function snapshotMatchesGateway(gateway: string): boolean {
   return generatedForGateway === gateway;
 }
 

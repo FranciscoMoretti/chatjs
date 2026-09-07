@@ -11,13 +11,12 @@ import { config as loadEnvConfig } from "dotenv";
 import { getProvider } from "files-sdk/providers";
 // biome-ignore lint/performance/noNamespaceImport: TypeScript API requires namespace import due to extensive usage
 import * as ts from "typescript";
-import type { GatewayType } from "../lib/ai/gateways/registry";
+import { gatewayEnvRequirements } from "../lib/ai/gateway-model-defaults";
 import { generatedForGateway } from "../lib/ai/models.generated";
 import { config } from "../lib/config";
 import {
   aiToolEnvRequirements,
   authEnvRequirements,
-  gatewayEnvRequirements,
   getMissingRequirement,
   isRequirementSatisfied,
 } from "../lib/config-requirements";
@@ -212,15 +211,16 @@ function resolveToolsDir(toolsPath: string): string {
 
 function validateGatewayKey(env: NodeJS.ProcessEnv): ValidationError | null {
   // Prevent TS from narrowing to the current literal config value.
-  const gateway = (() => config.ai.gateway as GatewayType)();
-  const requirement = gatewayEnvRequirements[gateway];
-  const missing = getMissingRequirement(requirement, env);
-  if (!missing) {
+  const gateway = (() => config.ai.gateway as string)();
+  const missing = gatewayEnvRequirements
+    .map((requirement) => getMissingRequirement(requirement, env))
+    .filter((value) => value !== null);
+  if (!missing.length) {
     return null;
   }
   return {
     feature: `aiGateway (${gateway})`,
-    missing: [missing],
+    missing,
   };
 }
 
@@ -410,7 +410,7 @@ function validateBaseUrl(env: NodeJS.ProcessEnv): ValidationError | null {
 }
 
 function checkGatewaySnapshot(): string | null {
-  if ((config.ai.gateway as GatewayType) === generatedForGateway) {
+  if ((config.ai.gateway as string) === generatedForGateway) {
     return null;
   }
   return `models.generated.ts was built for "${generatedForGateway}" but config uses "${config.ai.gateway}". Run \`bun fetch:models\` to update the fallback snapshot.`;

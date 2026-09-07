@@ -26,6 +26,7 @@ import {
 	scaffoldFromTemplate,
 } from "../helpers/scaffold";
 import { storageEnvRequirements } from "../helpers/storage-provider";
+import { resolveGateway } from "../registry/gateways";
 import type { EnvRequirement as RegistryEnvRequirement } from "../registry/schema";
 import { fetchRegistryIndex } from "../registry/fetch";
 import { resolveToolsPath } from "../utils/get-config";
@@ -98,12 +99,17 @@ const createOptionsSchema = z.object({
 	packageManager: z.enum(["bun", "npm", "pnpm", "yarn"]).optional(),
 	storageProvider: z.string().optional(),
 	storageConfig: z.string().optional(),
+	gateway: z.string().optional(),
 });
 
 export const create = new Command()
 	.name("create")
 	.description("scaffold a new ChatJS chat application")
 	.argument("[directory]", "target directory for the project")
+	.option(
+		"--gateway <gateway>",
+		"gateway name, registry item URL, or local JSON path",
+	)
 	.option("-y, --yes", "skip prompts and use defaults", false)
 	.option("--no-install", "skip dependency installation")
 	.option("--electron", "include the Electron desktop app")
@@ -162,7 +168,13 @@ export const create = new Command()
 			const appPrefix = projectName;
 			const appUrl = "http://localhost:3000";
 
-			const gateway = await promptGateway(options.yes);
+			const gatewaySource =
+				options.gateway ?? (await promptGateway(options.yes));
+			const gatewaySelection = await resolveGateway(
+				gatewaySource,
+				options.gateway ? options.registry : undefined,
+			);
+			const gateway = gatewaySelection.definition.id;
 			const coreFeatures = await promptCoreFeatures(options.yes);
 			const documentTypes = await promptDocumentTypes(
 				options.yes,
@@ -189,7 +201,7 @@ export const create = new Command()
 			const assistantTools = await promptAssistantTools(
 				registryItems,
 				options.yes,
-				gateway,
+				gatewaySelection.definition,
 			);
 			const usesStorage =
 				coreFeatures.attachments ||
@@ -214,11 +226,15 @@ export const create = new Command()
 			const scaffoldSpinner = spinner("Scaffolding project...").start();
 			try {
 				if (options.fromGit) {
-					await scaffoldFromGit(options.fromGit, targetDir, { storage });
+					await scaffoldFromGit(options.fromGit, targetDir, {
+						storage,
+						gateway: gatewaySelection,
+					});
 				} else {
 					await scaffoldFromTemplate(targetDir, {
 						packageManager,
 						storage,
+						gateway: gatewaySelection,
 					});
 				}
 				if (withElectron) {
@@ -253,6 +269,7 @@ export const create = new Command()
 					appUrl,
 					withElectron,
 					gateway,
+					gatewayDefaults: gatewaySelection.definition.defaults,
 					coreFeatures,
 					documentTypes,
 					builtInTools: assistantTools.builtInTools,
@@ -299,6 +316,7 @@ export const create = new Command()
 
 			const envEntries = collectEnvChecklist({
 				gateway,
+				gatewayRequirements: gatewaySelection.definition.envRequirements,
 				coreFeatures,
 				builtInTools: assistantTools.builtInTools,
 				auth,

@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typedRoutes: true,
+  transpilePackages: ["@chat-js/gateways"],
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {

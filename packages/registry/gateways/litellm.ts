@@ -5,12 +5,10 @@ import type {
 } from "@ai-sdk/provider";
 import type { ImageModel } from "ai";
 import { z } from "zod";
-import { createModuleLogger } from "@/lib/logger";
-import type { AiGatewayModel } from "../ai-gateway-models-schemas";
-import { getFallbackModels } from "./fallback-models";
-import type { GatewayProvider } from "./gateway-provider";
+import type { GatewayProvider } from "@chat-js/gateways/gateway-provider";
+import type { AiGatewayModel } from "@chat-js/gateways/models";
+import { GatewayRuntime } from "@chat-js/gateways/runtime";
 
-const log = createModuleLogger("ai/gateways/litellm");
 const TRAILING_SLASHES_REGEX = /\/+$/;
 
 const litellmModelsResponseSchema = z.object({
@@ -20,7 +18,7 @@ const litellmModelsResponseSchema = z.object({
       id: z.string(),
       object: z.string().optional(),
       owned_by: z.string().optional(),
-    })
+    }),
   ),
 });
 
@@ -44,6 +42,7 @@ function toAiGatewayModel(model: LiteLLMModelResponse): AiGatewayModel {
 }
 
 export class LiteLLMGateway
+  extends GatewayRuntime
   implements GatewayProvider<"litellm", string, string, never>
 {
   readonly type = "litellm" as const;
@@ -76,11 +75,11 @@ export class LiteLLMGateway
   }
 
   private getApiKey(): string | undefined {
-    return process.env.LITELLM_API_KEY;
+    return this.env.LITELLM_API_KEY;
   }
 
   private getBaseURL(): string | undefined {
-    return process.env.LITELLM_BASE_URL;
+    return this.env.LITELLM_BASE_URL;
   }
 
   private getModelsUrl(baseURL: string): string {
@@ -96,12 +95,12 @@ export class LiteLLMGateway
     const baseURL = this.getBaseURL();
 
     if (!baseURL) {
-      log.warn("No LITELLM_BASE_URL found, using fallback models");
-      return [...getFallbackModels(this.type)];
+      this.log.warn("No LITELLM_BASE_URL found, using fallback models");
+      return [...this.getFallbackModels(this.type)];
     }
 
     const url = this.getModelsUrl(baseURL);
-    log.debug({ url }, "Fetching models from LiteLLM proxy");
+    this.log.debug({ url }, "Fetching models from LiteLLM proxy");
 
     try {
       const headers: Record<string, string> = {
@@ -111,16 +110,15 @@ export class LiteLLMGateway
         headers.Authorization = `Bearer ${apiKey}`;
       }
 
-      const response = await fetch(url, {
+      const response = await this.fetch(url, {
         headers,
         signal: AbortSignal.timeout(10_000),
-        next: { revalidate: 3600 },
       });
 
       if (!response.ok) {
-        log.error(
+        this.log.error(
           { status: response.status, statusText: response.statusText, url },
-          "LiteLLM proxy returned non-OK response"
+          "LiteLLM proxy returned non-OK response",
         );
         throw new Error(`Failed to fetch models: ${response.statusText}`);
       }
@@ -129,17 +127,17 @@ export class LiteLLMGateway
       const models = body.data;
       const result = models.map(toAiGatewayModel);
 
-      log.info(
+      this.log.info(
         { modelCount: result.length },
-        "Successfully fetched models from LiteLLM proxy"
+        "Successfully fetched models from LiteLLM proxy",
       );
       return result;
     } catch (error) {
-      log.error(
+      this.log.error(
         { err: error, url },
-        "Error fetching models from LiteLLM proxy, falling back to generated models"
+        "Error fetching models from LiteLLM proxy, falling back to generated models",
       );
-      return [...getFallbackModels(this.type)];
+      return [...this.getFallbackModels(this.type)];
     }
   }
 }

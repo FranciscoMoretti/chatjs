@@ -1,5 +1,6 @@
 import { createThreadStateSnapshot } from "@chat-js/thread";
 import { describe, expect, it } from "vitest";
+import { gatewayModelDefaults } from "@/lib/ai/gateway-model-defaults";
 import type { ChatMessage } from "@/lib/ai/types";
 import {
   buildTreeSnapshotFromMessages,
@@ -25,7 +26,7 @@ function message({
       parentMessageId,
       parallelGroupId: parallelIndex === null ? null : "group-1",
       parallelIndex,
-      selectedModel: "openai/gpt-5-nano",
+      selectedModel: gatewayModelDefaults.workflows.title,
     },
     parts: [{ text: id, type: "text" }],
     role,

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it, vi } from "vitest";
+import { gatewayModelDefaults } from "@/lib/ai/gateway-model-defaults";
 import type { ChatMessage } from "./ai/types";
 
 const fileStorage = vi.hoisted(() => ({
@@ -34,7 +35,7 @@ function createMessage({
     metadata: {
       createdAt: new Date("2024-01-01T00:00:00.000Z"),
       parentMessageId,
-      selectedModel: "openai/gpt-4o-mini",
+      selectedModel: gatewayModelDefaults.workflows.chat,
       activeStreamId: null,
     },
     chatId,

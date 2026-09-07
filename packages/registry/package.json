@@ -1,7 +1,7 @@
 {
   "name": "@chat-js/registry",
   "version": "0.1.2",
-  "description": "ChatJS tool registry items",
+  "description": "ChatJS tool and gateway registry items",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -26,23 +26,37 @@
       "default": "./index.js"
     },
     "./index.json": "./index.json",
-    "./items/*": "./items/*.json"
+    "./items/*": "./items/*.json",
+    "./gateways.json": "./gateways.json"
   },
   "types": "./index.d.ts",
   "files": [
     "index.d.ts",
     "index.js",
     "index.json",
-    "items"
+    "items",
+    "gateways.json"
   ],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "bun build.ts",
+    "build": "bun build.ts && bun build-gateways.ts",
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "ts-morph": "^27.0.2"
+  },
+  "devDependencies": {
+    "@chat-js/gateways": "workspace:*",
+    "@ai-sdk/provider": "4.0.10",
+    "ai": "7.0.93",
+    "@ai-sdk/gateway": "4.0.75",
+    "@ai-sdk/openai": "4.0.59",
+    "@ai-sdk/openai-compatible": "3.0.44",
+    "@openrouter/ai-sdk-provider": "3.0.0",
+    "@ai-sdk/anthropic": "4.0.49",
+    "@ai-sdk/google": "4.0.64",
+    "zod": "^4.3.6"
   }
 }
