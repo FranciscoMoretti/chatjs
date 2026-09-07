@@ -1,0 +1,22 @@
+$ turbo run test:types
+• turbo 2.10.12
+
+   • Packages in scope: @chat-js/cli, @chat-js/electron, @chat-js/registry, @chat-js/thread, @chatjs/chat, @chatjs/docs, @chatjs/site
+   • Running test:types in 7 packages
+   • Remote caching disabled, using shared worktree cache
+
+@chat-js/thread:test:types: cache hit, replaying logs 246882f6cac2a1ff
+@chat-js/thread:test:types: $ tsc -p tsconfig.json --noEmit && bun run build
+@chat-js/thread:test:types: $ bun -e "import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true })" && tsc -p tsconfig.build.json && bun ./build.ts
+@chatjs/chat:test:types: cache miss, executing 8f7612883994a604
+@chatjs/site:test:types: cache hit, replaying logs 8c19e65479e39b43
+@chatjs/site:test:types: $ next typegen . && tsc --noEmit
+@chatjs/site:test:types: Generating route types...
+@chatjs/site:test:types: ✓ Types generated successfully
+@chatjs/chat:test:types: $ rm -rf .next/dev/types && next typegen . && tsc --noEmit
+@chatjs/chat:test:types: Generating route types...
+@chatjs/chat:test:types: ✓ Types generated successfully
+
+ Tasks:    3 successful, 3 total
+Cached:    2 cached, 3 total
+  Time:    8.603s

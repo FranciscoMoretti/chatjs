@@ -1,0 +1,27 @@
+$ turbo run lint
+• turbo 2.10.12
+
+   • Packages in scope: @chat-js/cli, @chat-js/electron, @chat-js/registry, @chat-js/thread, @chatjs/chat, @chatjs/docs, @chatjs/site
+   • Running lint in 7 packages
+   • Remote caching disabled, using shared worktree cache
+
+@chatjs/docs:lint: cache hit, replaying logs ff53fa414dad03b0
+@chat-js/thread:lint: cache hit, replaying logs ecfdcc15b4b77fb1
+@chatjs/docs:lint: $ blume doctor
+@chatjs/docs:lint: [blume] ℹ Pages: 72
+@chatjs/docs:lint: [blume] ℹ Output: static
+@chat-js/thread:lint: $ bunx @biomejs/biome@2.4.10 check src test build.ts README.md ARCHITECTURE.md package.json tsconfig.json tsconfig.build.json biome.jsonc
+@chatjs/docs:lint: [blume] ℹ Search: orama
+@chatjs/docs:lint: [blume] ✔ No problems found.
+@chat-js/thread:lint: Saved lockfile
+@chat-js/thread:lint: Checked 22 files in 28ms. No fixes applied.
+@chatjs/site:lint: cache hit, replaying logs ae3fbf33915e4886
+@chatjs/chat:lint: cache miss, executing 9c6a242f2b7a0471
+@chatjs/site:lint: $ ultracite check
+@chatjs/site:lint: Checked 29 files in 14ms. No fixes applied.
+@chatjs/chat:lint: $ ultracite check
+@chatjs/chat:lint: Checked 490 files in 104ms. No fixes applied.
+
+ Tasks:    4 successful, 4 total
+Cached:    3 cached, 4 total
+  Time:    326ms

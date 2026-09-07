@@ -21,12 +21,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  useDeleteChat,
-  useGetAllChats,
-  useRenameChat,
-  useRenameProject,
-} from "@/hooks/chat-sync-hooks";
+import { useGetAllChats, useRenameChat } from "@/hooks/chat-history-hooks";
+import { useDeleteChat, useRenameProject } from "@/hooks/chat-sync-hooks";
 import type { ChatMessage } from "@/lib/ai/types";
 import type { ProjectColorName, ProjectIconName } from "@/lib/project-icons";
 import { useLastMessageId } from "@/lib/stores/hooks-base";

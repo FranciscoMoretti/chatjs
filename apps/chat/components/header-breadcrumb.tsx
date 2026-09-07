@@ -20,7 +20,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { usePinChat, useProject, useRenameChat } from "@/hooks/chat-sync-hooks";
+import { usePinChat, useRenameChat } from "@/hooks/chat-history-hooks";
+import { useProject } from "@/hooks/chat-sync-hooks";
 import { usePublicChat } from "@/hooks/use-shared-chat";
 import type { Session } from "@/lib/auth";
 import type { ChatRouteSource } from "@/lib/chat-route";

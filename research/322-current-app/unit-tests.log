@@ -1,0 +1,10 @@
+$ vitest run
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+ RUN  v4.1.4 /private/tmp/chatjs-322-history-current/apps/chat
+
+
+ Test Files  33 passed (33)
+      Tests  153 passed (153)
+   Start at  10:47:34
+   Duration  861ms (transform 2.72s, setup 0ms, import 5.32s, tests 648ms, environment 354ms)
