@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
+import { gatewayModelDefaults } from "@/lib/ai/gateway-model-defaults";
 import type { ChatMessage } from "@/lib/ai/types";
 import {
   clearResponseActiveStream,
@@ -16,7 +17,7 @@ function createMessage(id: string, activeStreamId: string | null): ChatMessage {
       parallelGroupId: null,
       parallelIndex: null,
       parentMessageId: null,
-      selectedModel: "openai/gpt-5-nano",
+      selectedModel: gatewayModelDefaults.workflows.title,
       selectedTool: undefined,
     },
     parts: [],

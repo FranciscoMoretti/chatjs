@@ -4,12 +4,9 @@ import type {
 } from "@ai-sdk/provider";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { ImageModel } from "ai";
-import { createModuleLogger } from "@/lib/logger";
-import type { AiGatewayModel } from "../ai-gateway-models-schemas";
-import { getFallbackModels } from "./fallback-models";
-import type { GatewayProvider } from "./gateway-provider";
-
-const log = createModuleLogger("ai/gateways/openrouter");
+import type { GatewayProvider } from "@chat-js/gateways/gateway-provider";
+import type { AiGatewayModel } from "@chat-js/gateways/models";
+import { GatewayRuntime } from "@chat-js/gateways/runtime";
 
 interface OpenRouterModelResponse {
   architecture: {
@@ -99,6 +96,7 @@ function toAiGatewayModel(model: OpenRouterModelResponse): AiGatewayModel {
 }
 
 export class OpenRouterGateway
+  extends GatewayRuntime
   implements GatewayProvider<"openrouter", string, never, never>
 {
   readonly type = "openrouter" as const;
@@ -127,7 +125,7 @@ export class OpenRouterGateway
   }
 
   private getApiKey(): string | undefined {
-    return process.env.OPENROUTER_API_KEY;
+    return this.env.OPENROUTER_API_KEY;
   }
 
   private getModelsUrl(): string {
@@ -138,26 +136,25 @@ export class OpenRouterGateway
     const apiKey = this.getApiKey();
 
     if (!apiKey) {
-      log.warn("No OPENROUTER_API_KEY found, using fallback models");
-      return [...getFallbackModels(this.type)];
+      this.log.warn("No OPENROUTER_API_KEY found, using fallback models");
+      return [...this.getFallbackModels(this.type)];
     }
 
     const url = this.getModelsUrl();
-    log.debug({ url }, "Fetching models from OpenRouter");
+    this.log.debug({ url }, "Fetching models from OpenRouter");
 
     try {
-      const response = await fetch(url, {
+      const response = await this.fetch(url, {
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        next: { revalidate: 3600 },
       });
 
       if (!response.ok) {
-        log.error(
+        this.log.error(
           { status: response.status, statusText: response.statusText, url },
-          "OpenRouter returned non-OK response"
+          "OpenRouter returned non-OK response",
         );
         throw new Error(`Failed to fetch models: ${response.statusText}`);
       }
@@ -166,17 +163,17 @@ export class OpenRouterGateway
       const models = (body.data ?? []) as OpenRouterModelResponse[];
       const result = models.map(toAiGatewayModel);
 
-      log.info(
+      this.log.info(
         { modelCount: result.length },
-        "Successfully fetched models from OpenRouter"
+        "Successfully fetched models from OpenRouter",
       );
       return result;
     } catch (error) {
-      log.error(
+      this.log.error(
         { err: error, url },
-        "Error fetching models from OpenRouter, falling back to generated models"
+        "Error fetching models from OpenRouter, falling back to generated models",
       );
-      return [...getFallbackModels(this.type)];
+      return [...this.getFallbackModels(this.type)];
     }
   }
 }

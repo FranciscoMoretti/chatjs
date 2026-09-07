@@ -48,7 +48,7 @@ function isLocalSource(source: string): boolean {
 	return !/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(source) || path.isAbsolute(source);
 }
 
-async function fetchJson(source: string): Promise<unknown> {
+export async function fetchJson(source: string): Promise<unknown> {
 	const isLocalPath = isLocalSource(source);
 	const filePath = isLocalPath
 		? path.resolve(process.cwd(), source)

@@ -1,7 +1,6 @@
-import type { AiGatewayModel } from "@/lib/ai/ai-gateway-models-schemas";
-import type { GatewayType } from "@/lib/ai/gateways/registry";
+import type { AiGatewayModel } from "@chat-js/gateways/models";
 
-export const generatedForGateway = "vercel" satisfies GatewayType;
+export const generatedForGateway = "vercel";
 
 export const models = [
 	{

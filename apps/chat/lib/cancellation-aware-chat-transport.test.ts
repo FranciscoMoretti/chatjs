@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import type { ChatTransport, UIMessageChunk } from "ai";
 import { describe, it, vi } from "vitest";
+import { gatewayModelDefaults } from "@/lib/ai/gateway-model-defaults";
 import type { ChatMessage } from "@/lib/ai/types";
 import { createAssistantRequestMessageId } from "./assistant-request-id";
 import { createCancellationAwareChatTransport } from "./cancellation-aware-chat-transport";
@@ -24,7 +25,7 @@ const message: ChatMessage = {
     parallelGroupId,
     parallelIndex: null,
     parentMessageId: null,
-    selectedModel: "openai/gpt-5-mini",
+    selectedModel: gatewayModelDefaults.workflows.chat,
   },
   parts: [{ text: "Compare these", type: "text" }],
   role: "user",
@@ -43,7 +44,7 @@ function requestOptions({
       parallelGroupId,
       parallelIndex: 1,
       requestId,
-      selectedModelId: "openai/gpt-5-nano",
+      selectedModelId: gatewayModelDefaults.workflows.title,
     },
     chatId,
     messageId: undefined,
@@ -83,7 +84,7 @@ describe("createCancellationAwareChatTransport", () => {
       parallelGroupId,
       parallelIndex: 1,
       requestId,
-      selectedModelId: "openai/gpt-5-nano",
+      selectedModelId: gatewayModelDefaults.workflows.title,
     });
     assert.deepEqual(cancellations[0], {
       chatId,
@@ -92,7 +93,7 @@ describe("createCancellationAwareChatTransport", () => {
         parallelGroupId,
         parallelIndex: 1,
         requestId,
-        selectedModelId: "openai/gpt-5-nano",
+        selectedModelId: gatewayModelDefaults.workflows.title,
         userMessageId,
       }),
       type: "request",

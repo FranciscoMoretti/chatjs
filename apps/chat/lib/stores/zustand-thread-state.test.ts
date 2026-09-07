@@ -1,5 +1,6 @@
 import type { UIMessage } from "ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { gatewayModelDefaults } from "@/lib/ai/gateway-model-defaults";
 import type { ChatMessage } from "@/lib/ai/types";
 import { ApplicationThread } from "@/lib/application-thread";
 import { createCustomChatStore } from "./custom-store-provider";
@@ -22,7 +23,7 @@ function chatMessage(
       activeStreamId: null,
       createdAt: new Date(0),
       parentMessageId: null,
-      selectedModel: "openai/gpt-5-nano",
+      selectedModel: gatewayModelDefaults.workflows.title,
     },
     parts: [{ text, type: "text" }],
     role,

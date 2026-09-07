@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { Thread } from "@chat-js/thread";
 import type { ChatTransport, UIMessageChunk } from "ai";
 import { afterEach, describe, it, vi } from "vitest";
+import { gatewayModelDefaults } from "@/lib/ai/gateway-model-defaults";
 import type { ChatMessage } from "@/lib/ai/types";
 import type { ParallelRequestSpec } from "./draft-chat-submission";
 import { createGatedChatTransport } from "./gated-chat-transport";
@@ -49,7 +50,7 @@ const message: ChatMessage = {
     parallelGroupId: "response-group-1",
     parallelIndex: null,
     parentMessageId: null,
-    selectedModel: "openai/gpt-5-mini",
+    selectedModel: gatewayModelDefaults.workflows.chat,
   },
   parts: [{ type: "text", text: "Compare both approaches" }],
   role: "user",
@@ -59,7 +60,7 @@ const requestSpecs = [
   {
     createdAt: new Date("2026-01-01T00:00:00.001Z"),
     isPrimary: true,
-    modelId: "openai/gpt-5-mini",
+    modelId: gatewayModelDefaults.workflows.chat,
     parallelGroupId: "response-group-1",
     parallelIndex: 0,
     requestId: "request-primary",
@@ -67,7 +68,7 @@ const requestSpecs = [
   {
     createdAt: new Date("2026-01-01T00:00:00.002Z"),
     isPrimary: false,
-    modelId: "openai/gpt-5-nano",
+    modelId: gatewayModelDefaults.workflows.title,
     parallelGroupId: "response-group-1",
     parallelIndex: 1,
     requestId: "request-secondary",
@@ -129,7 +130,7 @@ describe("runParallelThreadRequestSpecs", () => {
       parallelIndex: 0,
       projectId: "project-1",
       requestId: "request-primary",
-      selectedModelId: "openai/gpt-5-mini",
+      selectedModelId: gatewayModelDefaults.workflows.chat,
     });
 
     assert.equal(
@@ -149,7 +150,7 @@ describe("runParallelThreadRequestSpecs", () => {
       parallelIndex: 1,
       projectId: "project-1",
       requestId: "request-secondary",
-      selectedModelId: "openai/gpt-5-nano",
+      selectedModelId: gatewayModelDefaults.workflows.title,
     });
 
     underlyingTransport.finish(0, "server-primary");

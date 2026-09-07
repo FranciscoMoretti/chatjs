@@ -1,22 +1,19 @@
-import { gateway } from "@ai-sdk/gateway";
+import { createGateway, type gateway } from "@ai-sdk/gateway";
 import type {
   Experimental_VideoModelV4,
   LanguageModelV4,
 } from "@ai-sdk/provider";
 import type { ImageModel } from "ai";
-import { createModuleLogger } from "@/lib/logger";
+import type { GatewayProvider } from "@chat-js/gateways/gateway-provider";
 import {
   type AiGatewayModel,
   aiGatewayModelDiscriminatorSchema,
   aiGatewayModelSchema,
   aiGatewayModelsEnvelopeSchema,
   isAiGatewayModelType,
-} from "../ai-gateway-models-schemas";
-import { getFallbackModels } from "./fallback-models";
-import type { GatewayProvider } from "./gateway-provider";
-import type { StrictLiterals } from "./provider-types";
-
-const log = createModuleLogger("ai/gateways/vercel");
+} from "@chat-js/gateways/models";
+import type { StrictLiterals } from "@chat-js/gateways/provider-types";
+import { GatewayRuntime } from "@chat-js/gateways/runtime";
 
 type VercelImageModelId = Parameters<(typeof gateway)["imageModel"]>[0];
 type VercelVideoModelId = Parameters<(typeof gateway)["videoModel"]>[0];
@@ -25,6 +22,7 @@ type VercelLanguageModelId = StrictLiterals<
 >;
 
 export class VercelGateway
+  extends GatewayRuntime
   implements
     GatewayProvider<
       "vercel",
@@ -36,19 +34,26 @@ export class VercelGateway
   readonly type = "vercel" as const;
 
   createLanguageModel(modelId: VercelLanguageModelId): LanguageModelV4 {
-    return gateway(modelId);
+    return this.getProvider()(modelId);
   }
 
   createImageModel(modelId: VercelImageModelId): ImageModel {
-    return gateway.imageModel(modelId);
+    return this.getProvider().imageModel(modelId);
   }
 
   createVideoModel(modelId: VercelVideoModelId): Experimental_VideoModelV4 {
-    return gateway.videoModel(modelId);
+    return this.getProvider().videoModel(modelId);
+  }
+
+  private provider?: ReturnType<typeof createGateway>;
+
+  private getProvider() {
+    this.provider ??= createGateway({ apiKey: this.env.AI_GATEWAY_API_KEY });
+    return this.provider;
   }
 
   private getApiKey(): string | undefined {
-    return process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN;
+    return this.env.AI_GATEWAY_API_KEY || this.env.VERCEL_OIDC_TOKEN;
   }
 
   private getModelsUrl(): string {
@@ -59,26 +64,25 @@ export class VercelGateway
     const apiKey = this.getApiKey();
 
     if (!apiKey) {
-      log.warn("No AI gateway API key found, using fallback models");
-      return [...getFallbackModels(this.type)];
+      this.log.warn("No AI gateway API key found, using fallback models");
+      return [...this.getFallbackModels(this.type)];
     }
 
     const url = this.getModelsUrl();
-    log.debug({ url }, "Fetching models from Vercel AI Gateway");
+    this.log.debug({ url }, "Fetching models from Vercel AI Gateway");
 
     try {
-      const response = await fetch(url, {
+      const response = await this.fetch(url, {
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        next: { revalidate: 3600 },
       });
 
       if (!response.ok) {
-        log.error(
+        this.log.error(
           { status: response.status, statusText: response.statusText, url },
-          "Vercel AI Gateway returned non-OK response"
+          "Vercel AI Gateway returned non-OK response",
         );
         throw new Error(`Failed to fetch models: ${response.statusText}`);
       }
@@ -99,27 +103,27 @@ export class VercelGateway
       }
 
       if (unsupportedTypes.size > 0) {
-        log.warn(
+        this.log.warn(
           {
             unsupportedTypes: [...unsupportedTypes],
             skippedModelCount: body.data.length - models.length,
             modelCount: body.data.length,
           },
-          "Skipping models with unsupported types from Vercel AI Gateway"
+          "Skipping models with unsupported types from Vercel AI Gateway",
         );
       }
 
-      log.info(
+      this.log.info(
         { modelCount: models.length },
-        "Successfully fetched models from Vercel AI Gateway"
+        "Successfully fetched models from Vercel AI Gateway",
       );
       return models;
     } catch (error) {
-      log.error(
+      this.log.error(
         { err: error, url },
-        "Error fetching models from Vercel AI Gateway, falling back to generated models"
+        "Error fetching models from Vercel AI Gateway, falling back to generated models",
       );
-      return [...getFallbackModels(this.type)];
+      return [...this.getFallbackModels(this.type)];
     }
   }
 }

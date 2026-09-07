@@ -1,10 +1,9 @@
+import type { AiGatewayModel } from "@chat-js/gateways/models";
 import { createModuleLogger } from "@/lib/logger";
-import type { AiGatewayModel } from "../ai-gateway-models-schemas";
 import {
   models as fallbackModels,
   generatedForGateway,
 } from "../models.generated";
-import type { GatewayType } from "./registry";
 
 const log = createModuleLogger("ai/gateways/fallback");
 
@@ -14,9 +13,7 @@ const log = createModuleLogger("ai/gateways/fallback");
  * IDs from a different provider, so returning them would cause resolution
  * errors — an empty array is safer.
  */
-export function getFallbackModels(
-  gateway: GatewayType
-): readonly AiGatewayModel[] {
+export function getFallbackModels(gateway: string): readonly AiGatewayModel[] {
   if (generatedForGateway !== gateway) {
     log.warn(
       { expected: gateway, actual: generatedForGateway },

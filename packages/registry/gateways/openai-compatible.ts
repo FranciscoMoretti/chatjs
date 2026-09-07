@@ -4,12 +4,9 @@ import type {
   LanguageModelV4,
 } from "@ai-sdk/provider";
 import type { ImageModel } from "ai";
-import { createModuleLogger } from "@/lib/logger";
-import type { AiGatewayModel } from "../ai-gateway-models-schemas";
-import { getFallbackModels } from "./fallback-models";
-import type { GatewayProvider } from "./gateway-provider";
-
-const log = createModuleLogger("ai/gateways/openai-compatible");
+import type { GatewayProvider } from "@chat-js/gateways/gateway-provider";
+import type { AiGatewayModel } from "@chat-js/gateways/models";
+import { GatewayRuntime } from "@chat-js/gateways/runtime";
 
 interface OpenAICompatibleModelResponse {
   created: number;
@@ -19,7 +16,7 @@ interface OpenAICompatibleModelResponse {
 }
 
 function toAiGatewayModel(
-  model: OpenAICompatibleModelResponse
+  model: OpenAICompatibleModelResponse,
 ): AiGatewayModel {
   return {
     id: model.id,
@@ -36,6 +33,7 @@ function toAiGatewayModel(
 }
 
 export class OpenAICompatibleGateway
+  extends GatewayRuntime
   implements GatewayProvider<"openai-compatible", string, string, never>
 {
   readonly type = "openai-compatible" as const;
@@ -68,11 +66,11 @@ export class OpenAICompatibleGateway
   }
 
   private getApiKey(): string | undefined {
-    return process.env.OPENAI_COMPATIBLE_API_KEY;
+    return this.env.OPENAI_COMPATIBLE_API_KEY;
   }
 
   private getBaseURL(): string | undefined {
-    return process.env.OPENAI_COMPATIBLE_BASE_URL;
+    return this.env.OPENAI_COMPATIBLE_BASE_URL;
   }
 
   async fetchModels(): Promise<AiGatewayModel[]> {
@@ -80,12 +78,14 @@ export class OpenAICompatibleGateway
     const baseURL = this.getBaseURL();
 
     if (!baseURL) {
-      log.warn("No OPENAI_COMPATIBLE_BASE_URL found, using fallback models");
-      return [...getFallbackModels(this.type)];
+      this.log.warn(
+        "No OPENAI_COMPATIBLE_BASE_URL found, using fallback models",
+      );
+      return [...this.getFallbackModels(this.type)];
     }
 
     const url = `${baseURL}/models`;
-    log.debug({ url }, "Fetching models from OpenAI-compatible provider");
+    this.log.debug({ url }, "Fetching models from OpenAI-compatible provider");
 
     try {
       const headers: Record<string, string> = {
@@ -95,15 +95,14 @@ export class OpenAICompatibleGateway
         headers.Authorization = `Bearer ${apiKey}`;
       }
 
-      const response = await fetch(url, {
+      const response = await this.fetch(url, {
         headers,
-        next: { revalidate: 3600 },
       });
 
       if (!response.ok) {
-        log.error(
+        this.log.error(
           { status: response.status, statusText: response.statusText, url },
-          "OpenAI-compatible provider returned non-OK response"
+          "OpenAI-compatible provider returned non-OK response",
         );
         throw new Error(`Failed to fetch models: ${response.statusText}`);
       }
@@ -112,17 +111,17 @@ export class OpenAICompatibleGateway
       const models = (body.data ?? []) as OpenAICompatibleModelResponse[];
       const result = models.map(toAiGatewayModel);
 
-      log.info(
+      this.log.info(
         { modelCount: result.length },
-        "Successfully fetched models from OpenAI-compatible provider"
+        "Successfully fetched models from OpenAI-compatible provider",
       );
       return result;
     } catch (error) {
-      log.error(
+      this.log.error(
         { err: error, url },
-        "Error fetching models from OpenAI-compatible provider, falling back to generated models"
+        "Error fetching models from OpenAI-compatible provider, falling back to generated models",
       );
-      return [...getFallbackModels(this.type)];
+      return [...this.getFallbackModels(this.type)];
     }
   }
 }

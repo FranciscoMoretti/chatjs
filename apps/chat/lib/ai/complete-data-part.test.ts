@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { gatewayModelDefaults } from "@/lib/ai/gateway-model-defaults";
 import type { ChatMessage } from "@/lib/ai/types";
 import { completeDataPart, parseAppendedMessage } from "./complete-data-part";
 
@@ -22,7 +23,7 @@ function message({
       parallelGroupId: null,
       parallelIndex: null,
       parentMessageId,
-      selectedModel: "openai/gpt-4o-mini",
+      selectedModel: gatewayModelDefaults.workflows.chat,
     },
   };
 }

@@ -61,6 +61,7 @@ function requirementToEntries(requirement: EnvRequirementLike): EnvVarEntry[] {
 
 export function collectEnvChecklist(input: {
 	gateway: Gateway;
+	gatewayRequirements?: EnvRequirementLike[];
 	coreFeatures: Record<CoreFeatureKey, boolean>;
 	builtInTools: Record<BuiltInToolKey, boolean>;
 	auth: Record<AuthProvider, boolean>;
@@ -78,8 +79,8 @@ export function collectEnvChecklist(input: {
 	});
 
 	// --- AI Gateway ---
-	const gwReq = gatewayEnvRequirements[input.gateway];
-	const gwEntries = requirementToEntries(gwReq);
+	const gwReq = input.gatewayRequirements ?? [gatewayEnvRequirements[input.gateway]];
+	const gwEntries = gwReq.flatMap(requirementToEntries);
 
 	entries.push(...gwEntries);
 

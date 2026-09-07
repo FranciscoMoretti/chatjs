@@ -85,13 +85,51 @@
       "cache": false,
       "dependsOn": ["electron:build"]
     },
+    "@chatjs/chat#build": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/packages/registry/gateways/**",
+        "$TURBO_ROOT$/packages/registry/package.json"
+      ],
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".next/**",
+        "dist/**",
+        "build/**"
+      ]
+    },
+    "@chatjs/chat#test:types": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/packages/registry/gateways/**",
+        "$TURBO_ROOT$/packages/registry/package.json"
+      ],
+      "dependsOn": [
+        "^test:types"
+      ]
+    },
+    "@chatjs/chat#test:unit": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/packages/registry/gateways/**",
+        "$TURBO_ROOT$/packages/registry/package.json"
+      ],
+      "dependsOn": [
+        "^test:unit"
+      ]
+    },
     "@chat-js/cli#build": {
+      "dependsOn": ["^build"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/apps/chat/**",
         "$TURBO_ROOT$/apps/electron/**",
         "$TURBO_ROOT$/packages/thread/src/**",
         "$TURBO_ROOT$/packages/thread/package.json",
+        "$TURBO_ROOT$/packages/registry/gateways/**",
+        "$TURBO_ROOT$/packages/registry/package.json",
         "$TURBO_ROOT$/scripts/sync-template.ts",
         "$TURBO_ROOT$/package.json",
         "!$TURBO_ROOT$/apps/{chat,electron}/**/{node_modules,.next,.turbo,build,dist,release,out,playwright,playwright-report,test-results,blob-report}/**",
@@ -111,6 +149,8 @@
         "$TURBO_ROOT$/apps/electron/**",
         "$TURBO_ROOT$/packages/thread/src/**",
         "$TURBO_ROOT$/packages/thread/package.json",
+        "$TURBO_ROOT$/packages/registry/gateways/**",
+        "$TURBO_ROOT$/packages/registry/package.json",
         "$TURBO_ROOT$/scripts/sync-template.ts",
         "$TURBO_ROOT$/package.json",
         "$TURBO_ROOT$/packages/registry/items/**",

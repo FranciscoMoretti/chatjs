@@ -1,6 +1,7 @@
-import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { evalite } from "evalite";
+import { getActiveGateway } from "@/lib/ai/active-gateway";
+import { config } from "@/lib/config";
 
 evalite("Test Capitals", {
   data: async () => [
@@ -15,7 +16,7 @@ evalite("Test Capitals", {
   ],
   task: async (input) => {
     const result = streamText({
-      model: openai("gpt-4o-mini"),
+      model: getActiveGateway().createLanguageModel(config.ai.workflows.chat),
       instructions: "Answer the question concisely.",
       prompt: input,
     });

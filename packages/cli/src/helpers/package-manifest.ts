@@ -4,6 +4,7 @@ type DependencyMap = Record<string, string>;
 type ScriptMap = Record<string, string>;
 
 type PackageJson = {
+  type?: "module" | "commonjs";
   packageManager?: string;
   scripts?: ScriptMap;
   dependencies?: DependencyMap;
@@ -152,6 +153,7 @@ export function normalizeScaffoldedPackageJson(
 
   switch (options?.template) {
     case "chat-app":
+      packageJson.type = "module";
       if (packageJson.scripts) {
         normalizeChatAppScripts(packageJson.scripts);
       }
