@@ -38,7 +38,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await rm(root, { recursive: true, force: true });
-}, 30_000);
+// Six independently installed dependency trees can take longer to remove on CI/macOS.
+}, 120_000);
 
 const external = externalGatewayFixture();
 const registryServer = Bun.serve({
