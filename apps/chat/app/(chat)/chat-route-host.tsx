@@ -8,6 +8,7 @@ import {
   useSearchParams,
 } from "next/navigation";
 import { type ReactNode, useEffect, useMemo } from "react";
+import { Chat } from "@/components/chat";
 import { ChatLoadingShell } from "@/components/chat-loading-shell";
 import { ChatSystem } from "@/components/chat-system";
 import {
@@ -452,24 +453,32 @@ function HostedChatRoute({ route }: { route: HostedParsedChatRoute }) {
     return <ChatLoadingShell />;
   }
 
+  const projectId = getProjectIdForChatSystem({
+    persistedRoute,
+    projectId: projectQuery.data?.id,
+    route,
+  });
+
   return (
     <ChatSystem
-      chat={persistedChat ?? null}
       id={id}
       initialMessages={initialMessages}
       initialTool={initialTool}
       isReadonly={false}
       overrideModelId={overrideModelId}
-      projectId={getProjectIdForChatSystem({
-        persistedRoute,
-        projectId: projectQuery.data?.id,
-        route,
-      })}
-      routeSource={route.source}
+      projectId={projectId}
       runtimeKey={liveRuntime.runtimeId}
       store={liveStore}
       thread={liveRuntime.data.thread}
-    />
+    >
+      <Chat
+        chat={persistedChat ?? null}
+        id={id}
+        isReadonly={false}
+        projectId={projectId}
+        routeSource={route.source}
+      />
+    </ChatSystem>
   );
 }
 
