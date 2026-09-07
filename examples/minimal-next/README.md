@@ -6,6 +6,10 @@ cooperative cancellation, and durable pending tool approval. `apps/chat` is
 unchanged. This independent Bun lockfile prevents a fixture from silently
 changing the demo's dependency graph; copy this directory to run independently.
 
+This is a standalone research example for #312, **not the CLI baseline or an
+approved replacement for `apps/chat`**. Its source seams are evidence for later
+integration decisions, not a requirement to migrate the reference app.
+
 ## Setup
 
 Requires Bun 1.3.11, **Node 24+**, PostgreSQL 17, and an OpenAI API key with access
@@ -35,17 +39,8 @@ fresh `m07` database yourself and omit these helpers. Eve/Workflow's supported
 bootstrap owns the `workflow`/worker schemas. `db:init` owns only the
 `chatjs.conversations` table; it does not read private Eve tables.
 
-In the monorepo, choose a free `CHATJS_DEV_SLOT` in root `.env.worktree.local`,
-run `bun dev:info --json`, then use two terminals with Node 24 first on PATH:
-
-```sh
-bun dev:minimal-eve
-bun dev:minimal
-```
-
-Offsets 4 and 5 select Next and Eve without colliding with chat/docs/site.
-The tested slot 79 maps to Next 3794 and Eve 3795. For standalone execution,
-set the two origins in `.env.local`, then run in separate terminals:
+Choose unoccupied ports for this standalone example, set the two origins in
+`.env.local`, then run in separate terminals with Node 24 first on PATH:
 
 ```sh
 node --env-file=.env.local node_modules/eve/bin/eve.js start --host 127.0.0.1 --port 3795
@@ -121,11 +116,13 @@ projection. Already-completed external effects are outside this example.
 With both services running and the environment loaded, from the repo root:
 
 ```sh
-bunx dotenv -e .env.worktree.local -e examples/minimal-next/.env.local -- bun run worktree-env minimal -- bun examples/minimal-next/scripts/proof.ts prepare
+bun --env-file=examples/minimal-next/.env.local examples/minimal-next/scripts/proof.ts prepare
 # Stop only this example's Eve process with Ctrl-C, then restart it.
-bunx dotenv -e .env.worktree.local -e examples/minimal-next/.env.local -- bun run worktree-env minimal -- bun examples/minimal-next/scripts/proof.ts resume
-bunx dotenv -e .env.worktree.local -e examples/minimal-next/.env.local -- bun run worktree-env minimal -- bun examples/minimal-next/scripts/proof.ts cancel
-bunx dotenv -e examples/minimal-next/.env.local -- bun run --cwd examples/minimal-next test
+bun --env-file=examples/minimal-next/.env.local examples/minimal-next/scripts/proof.ts resume
+bun --env-file=examples/minimal-next/.env.local examples/minimal-next/scripts/proof.ts cancel
+cd examples/minimal-next
+bun --env-file=.env.local test tests
+cd ../..
 bun run --cwd examples/minimal-next lint
 bun run --cwd examples/minimal-next test:types
 bun lint
@@ -159,11 +156,10 @@ Eve vendors framework tools/providers internally; the Node build was 19.1 MB
 No Files SDK, Redis, sandbox, editor, catalog, Better Auth, saved-history UI,
 thread tree, or full-demo package was added by this example.
 
-CLI/registry consumers should materialize only this selected source graph using
-the existing shadcn/Eve installer architecture. This example defines no registry,
-package manager, capability catalog or version resolver. Host identity, database
-and model integrations are ordinary replaceable project-local source seams;
-external choices must be able to supply those same requirements.
+This example defines no registry, package manager, capability catalog or version
+resolver. Existing-app selective installation is owned by the separate CLI plan.
+Host identity, database and model integrations here are project-local source
+seams; their adoption requires a separate integration decision.
 
 Functional UI consumers own `app/chat.tsx` presentation and consume
 `lib/projection.ts` (`ProjectData`, `ProjectMessage`, `projectReducer`) through
@@ -173,3 +169,21 @@ shared by `agent/tools/confirm_note.ts` and the renderer. Mounted identity is
 explicitly `confirm_note`; do not use an ambiguous global tool-name union.
 Messages remain a derived Eve projection, not a second writable transcript.
 The Eve React hook owns stream attachment/cleanup; a new session remounts it.
+
+## Independent review fixes
+
+The same first-message schema now validates on client and server before retry
+storage is written. An oversized request cannot poison later corrected sends;
+a previously stored oversized payload can be replaced because the server could
+never have accepted it. Valid uncertain operations retain their original key
+and message. The UI shows that retained message when retrying.
+
+Follow-up drafts clear only after send/catch-up succeeds. A failed command keeps
+its input, and text typed during an in-flight send is not discarded. Retaining
+a draft does not prove the command was unaccepted: on an ambiguous response,
+reconnect and inspect replay before choosing to resend. There is no automatic
+follow-up retry or new idempotency claim.
+
+The host must clear this example's pending-create session storage on identity
+change. A production multi-account UI needs identity-scoped retry state; this
+example has no account-switch UI and does not claim that integration.

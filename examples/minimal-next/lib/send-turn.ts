@@ -4,7 +4,12 @@ export async function sendTurn(
 	send: () => Promise<void>,
 	resume: () => Promise<void>,
 	afterCancellation = false,
+	getError: () => Error | undefined = () => undefined,
 ): Promise<void> {
 	await send();
+	const sendError = getError();
+	if (sendError) throw sendError;
 	if (afterCancellation) await resume();
+	const resumeError = getError();
+	if (resumeError) throw resumeError;
 }

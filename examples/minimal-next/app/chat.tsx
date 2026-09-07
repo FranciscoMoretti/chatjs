@@ -2,8 +2,8 @@
 import type { InputRequest } from "eve/client";
 import { useEveAgent } from "eve/react";
 import { useEffect, useRef, useState } from "react";
-import { z } from "zod";
 import { applicationClient, type Binding } from "../lib/application-client";
+import { finishCreation, prepareCreation } from "../lib/create-operation";
 import { type ProjectData, projectReducer } from "../lib/projection";
 import { sendTurn } from "../lib/send-turn";
 
@@ -30,18 +30,10 @@ export function Chat() {
 		setError("");
 		try {
 			// Preserve the same operation and payload after a lost response/reload.
-			const stored = sessionStorage.getItem("chatjs.pending-create");
-			const operation = stored
-				? z
-						.object({ operationId: z.uuid(), message: z.string() })
-						.parse(JSON.parse(stored))
-				: { operationId: crypto.randomUUID(), message: draft };
-			sessionStorage.setItem(
-				"chatjs.pending-create",
-				JSON.stringify(operation),
-			);
+			const operation = prepareCreation(sessionStorage, draft);
+			setDraft(operation.message);
 			const next = await api.conversation.create.mutate(operation);
-			sessionStorage.removeItem("chatjs.pending-create");
+			finishCreation(sessionStorage);
 			window.history.replaceState(
 				null,
 				"",
@@ -97,16 +89,26 @@ export function Chat() {
 	);
 }
 function Conversation({ binding }: { binding: Binding }) {
+	const commandError = useRef<Error | undefined>(undefined);
 	const snapshot = useEveAgent<ProjectData>({
 		host: "/api/eve",
 		initialSession: { sessionId: binding.sessionId, streamIndex: 0 },
 		reducer: projectReducer,
 		resume: true,
+		onError: (cause) => {
+			commandError.current = cause;
+		},
 	});
 	const afterCancellation = useRef(0);
 	async function send(action: () => Promise<void>) {
 		const catchUp = afterCancellation.current;
-		await sendTurn(action, snapshot.resume, catchUp > 0);
+		commandError.current = undefined;
+		await sendTurn(
+			action,
+			snapshot.resume,
+			catchUp > 0,
+			() => commandError.current,
+		);
 		if (afterCancellation.current === catchUp) afterCancellation.current = 0;
 	}
 
@@ -166,8 +168,10 @@ function Conversation({ binding }: { binding: Binding }) {
 				onSubmit={(event) => {
 					event.preventDefault();
 					const text = draft;
-					setDraft("");
-					void run(() => send(() => snapshot.send(text)));
+					void run(async () => {
+						await send(() => snapshot.send(text));
+						setDraft((current) => (current === text ? "" : current));
+					});
 				}}
 			>
 				<label htmlFor="message">Message</label>
