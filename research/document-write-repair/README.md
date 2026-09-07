@@ -1,6 +1,6 @@
 # Existing-app document write repair
 
-Base: `4aec0f05c6ed1ea9ba5a8bbacf39b1726583d523` (origin/main fetched for this work). Local branch `codex/document-write-repair`. No dependency on PR317/318; neither feature worktree changed. No push, PR, schema migration, runtime/provider replacement or data cleanup.
+Base: `8178650771aed69e75421a988e6c57f69ac131ca` (origin/main refreshed 2026-09-07; includes merged #317). Branch `codex/document-write-repair`. The original local repair396e151f was rebased without conflicts; neither feature worktree changed. This is a separate review slice for #323. No schema migration, runtime/provider replacement or data cleanup.
 
 Changes:
 
@@ -10,6 +10,8 @@ Changes:
 - Existing read/share/delete behavior and schema remain unchanged. No stale-base/CAS guarantee is added. Locking existing revision rows is not a stable parent-owner lock and does not solve historical branching or externally injected inconsistent ownership. Inconsistent existing histories fail closed, with no automatic repair.
 
 ## Verification
+
+Refreshed 2026-09-07: all checks below and the actual PostgreSQL proof were rerun after the conflict-free rebase onto current main.
 
 - Root `bun lint`: passed (app executed; three unrelated tasks cached).
 - Root `bun test:types`: passed (app executed; two unrelated tasks cached).
