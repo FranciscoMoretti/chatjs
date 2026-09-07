@@ -35,6 +35,16 @@ For React:
 bun add @chat-js/thread ai@^7.0.93 @ai-sdk/react@^4.0.96 react
 ```
 
+Requires Node.js 22 or later. This version targets AI SDK `^7.0.93` and
+`@ai-sdk/react ^4.0.96`. React peers allow 18 or later; repository tests use
+React 19.2.3. Upgrade AI SDK 6 and its provider packages before adopting this
+version. The headless core can be installed without React.
+
+The hook provides client tree and run state. Your app still owns the transport,
+server execution, authentication and storage. Start with the
+[existing-app recipe](https://chatjs.dev/docs/cookbook/threaded-chat) for a
+client/server example, then add your persistence and reconnect implementation.
+
 ## Use
 
 ```tsx

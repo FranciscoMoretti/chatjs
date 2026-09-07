@@ -1,0 +1,169 @@
+---
+title: "Add branching to an existing app"
+description: "Connect useThread to your AI SDK endpoint and navigate independent response branches"
+---
+
+Use `@chat-js/thread` inside your own React application without installing the
+ChatJS starter. You need Node.js 22 or later, React 18 or later and an AI SDK 7
+endpoint that returns UI message streams. The repository tests use React 19.2.3.
+
+## Install
+
+```bash
+bun add @chat-js/thread ai@^7.0.93 @ai-sdk/react@^4.0.96 react
+```
+
+AI SDK 6 applications need to upgrade their SDK and provider packages first.
+The package version is independent of the ChatJS application and CLI versions.
+
+## Connect your server
+
+Keep your existing AI SDK endpoint if it accepts the selected `messages` path
+and returns a UI message stream. Each response runs a separate request. Your
+endpoint must allow concurrent requests for the same conversation.
+
+This minimal Next.js route demonstrates the protocol. Set `AI_GATEWAY_API_KEY`
+on your server and choose an enabled model in your gateway. For a local example,
+place this in `app/api/chat/route.ts`:
+
+```ts
+import { convertToModelMessages, streamText, validateUIMessages } from "ai";
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  const messages = await validateUIMessages({ messages: body.messages });
+  const result = streamText({
+    model: "openai/gpt-4.1-mini",
+    messages: await convertToModelMessages(messages),
+    abortSignal: request.signal,
+  });
+
+  return result.toUIMessageStreamResponse();
+}
+```
+
+Before exposing this endpoint publicly, apply your app's authentication,
+request limits and model-access policy. Validate ownership before reading or
+writing saved conversations. Client-supplied message IDs and paths are input,
+not authorization. This minimal route does not persist or resume streams.
+
+## Render and navigate branches
+
+The message list below shows the selected path. Selecting a message and sending
+continues from that node. “Another response” starts a sibling response while
+leaving the selected path unchanged.
+
+```tsx
+"use client";
+
+import { useThread } from "@chat-js/thread/react";
+import { DefaultChatTransport } from "ai";
+import { useState } from "react";
+
+export function Conversation() {
+  const [text, setText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  function reportError(cause: unknown) {
+    setError(cause instanceof Error ? cause.message : "Request failed");
+  }
+  const chat = useThread({
+    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    concurrency: { maxActiveRuns: 3 },
+  });
+
+  return (
+    <section aria-label="Branching conversation">
+      {chat.messages.map((message) => (
+        <article key={message.id}>
+          <strong>{message.role}</strong>
+          {message.parts.map((part, index) =>
+            part.type === "text" ? <p key={index}>{part.text}</p> : null
+          )}
+          <button type="button" onClick={() => chat.tree.setCursor(message.id)}>
+            Continue from here
+          </button>
+          {chat.tree.getSiblings(message.id).map((sibling, index) => (
+            <button
+              key={sibling.id}
+              type="button"
+              onClick={() => chat.tree.setCursor(sibling.id)}
+            >
+              Branch {index + 1}
+            </button>
+          ))}
+          {message.role === "user" && (
+            <button
+              type="button"
+              disabled={chat.tree.activeRuns.length >= 3}
+              onClick={() => {
+                void chat.tree.startRun({ from: message.id, follow: false }).catch(reportError);
+              }}
+            >
+              Another response
+            </button>
+          )}
+        </article>
+      ))}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!text.trim()) return;
+          setError(null);
+          void chat.sendMessage({ text }).catch(reportError);
+          setText("");
+        }}
+      >
+        <label>
+          Message
+          <input value={text} onChange={(event) => setText(event.target.value)} />
+        </label>
+        <button type="submit" disabled={chat.tree.activeRuns.length >= 3}>
+          Send
+        </button>
+      </form>
+      {chat.tree.activeRuns.map((run) => (
+        <button key={run.id} type="button" onClick={() => chat.tree.stopRun(run.id)}>
+          Stop response {run.id}
+        </button>
+      ))}
+      {error && <p role="alert">{error}</p>}
+      {chat.tree.runs.filter((run) => run.error).map((run) => (
+        <p key={run.id} role="alert">{run.error?.message}</p>
+      ))}
+    </section>
+  );
+}
+```
+
+Try sending a prompt, starting another response from its user message, switching
+between assistant siblings, and stopping one response. The other response
+continues. Choosing an earlier message and sending creates a new path while
+preserving its descendants. To edit a user message, select its parent and send
+the edited text as a new message.
+
+## Preserve state and restore history
+
+Save `chat.tree.getSnapshot()`, not just `chat.messages`. The snapshot contains
+the complete ordered tree as `{ version: 1, cursorId, nodes }`. Restore that
+snapshot through `initialTree` when creating the controller, using the same
+conversation `id`. Loading a different conversation should create or select
+that conversation's controller rather than overwrite an active one.
+
+Persist each message ID together with its parent from `nodes`. If your server
+stores responses individually, capture the response ID from the UI message
+stream and retain the parent for that request. Do not infer the parent from
+whichever branch happens to be selected when a request finishes. Apply your
+authorization policy to both conversation and parent IDs.
+
+For controller state that survives component unmounts, create a `Thread` in your
+application runtime and pass it to `useThread({ thread })`. Keep a separate
+controller for each conversation. Your runtime decides when to stop and release
+it. A process-global server singleton would mix users and is not appropriate.
+
+Saved history and resumable execution are separate. `resume: true` or
+`resumeStream()` reconnects the selected assistant only when your server and
+transport implement stream resumption. A tree snapshot does not serialize live
+requests, retain server streams, or automatically resume all siblings.
+
+See [useThread](../core/use-thread) for the state model and
+[resumable streams](./resumable-streams) for ChatJS's server-side implementation.
