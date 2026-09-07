@@ -1,5 +1,6 @@
 "use client";
 
+import { ChatContent } from "@/components/chat/chat-content";
 import {
   ChatLayout,
   ChatLayoutHandle,
@@ -8,9 +9,12 @@ import {
 } from "@/components/chat/chat-layout";
 import { MainChatPanel } from "@/components/chat/main-chat-panel";
 import { SecondaryChatPanel } from "@/components/chat/secondary-chat-panel";
+import { ChatHeader } from "@/components/chat-header";
 import { useArtifactSelector } from "@/hooks/use-artifact";
 import type { ChatRouteSource } from "@/lib/chat-route";
+import { useMessageIds } from "@/lib/stores/hooks-base";
 import type { UIChat } from "@/lib/types/ui-chat";
+import { useSession } from "@/providers/session-provider";
 
 export function Chat({
   chat,
@@ -25,6 +29,8 @@ export function Chat({
   projectId?: string;
   routeSource: ChatRouteSource;
 }) {
+  const { data: session } = useSession();
+  const hasMessages = useMessageIds().length > 0;
   const isSecondaryPanelVisible = useArtifactSelector(
     (state) => state.isVisible
   );
@@ -32,14 +38,24 @@ export function Chat({
   return (
     <ChatLayout isSecondaryPanelVisible={isSecondaryPanelVisible}>
       <ChatLayoutMain>
-        <MainChatPanel
-          chat={chat}
-          chatId={id}
-          className="flex h-full min-w-0 flex-1 flex-col"
-          isReadonly={isReadonly}
-          projectId={projectId}
-          routeSource={routeSource}
-        />
+        <MainChatPanel>
+          <ChatHeader
+            chat={chat}
+            chatId={id}
+            className="h-(--header-height) shrink-0"
+            hasMessages={hasMessages}
+            isReadonly={isReadonly}
+            projectId={projectId}
+            routeSource={routeSource}
+            user={session?.user}
+          />
+          <ChatContent
+            chatId={id}
+            className="min-h-0 flex-1"
+            isReadonly={isReadonly}
+            projectId={projectId}
+          />
+        </MainChatPanel>
       </ChatLayoutMain>
 
       <ChatLayoutHandle />

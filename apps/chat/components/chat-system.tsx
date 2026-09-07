@@ -1,23 +1,20 @@
 "use client";
 
 import type { MessageTreeSnapshot } from "@chat-js/thread";
-import { memo } from "react";
-import { Chat } from "@/components/chat";
+import { memo, type ReactNode } from "react";
 import { DataStreamHandler } from "@/components/data-stream-handler";
 import { ArtifactProvider } from "@/hooks/use-artifact";
 import type { AppModelId } from "@/lib/ai/app-models";
 import type { ChatMessage, UiToolName } from "@/lib/ai/types";
 import type { ApplicationThread } from "@/lib/application-thread";
-import type { ChatRouteSource } from "@/lib/chat-route";
 import {
   type CustomChatStoreApi,
   CustomStoreProvider,
 } from "@/lib/stores/custom-store-provider";
-import type { UIChat } from "@/lib/types/ui-chat";
 import { ChatInputProvider } from "@/providers/chat-input-provider";
 
 export const ChatSystem = memo(function PureChatSystem({
-  chat,
+  children,
   id,
   initialMessages,
   initialTree,
@@ -25,12 +22,11 @@ export const ChatSystem = memo(function PureChatSystem({
   initialTool = null,
   overrideModelId,
   projectId,
-  routeSource = projectId ? "project" : "chat",
   runtimeKey,
   store,
   thread,
 }: {
-  chat?: UIChat | null;
+  children: ReactNode;
   id: string;
   initialMessages: ChatMessage[];
   initialTree?: MessageTreeSnapshot<ChatMessage>;
@@ -38,7 +34,6 @@ export const ChatSystem = memo(function PureChatSystem({
   initialTool?: UiToolName | null;
   overrideModelId?: AppModelId;
   projectId?: string;
-  routeSource?: ChatRouteSource;
   runtimeKey: string;
   store?: CustomChatStoreApi<ChatMessage>;
   thread?: ApplicationThread;
@@ -54,14 +49,7 @@ export const ChatSystem = memo(function PureChatSystem({
         threadId={id}
       >
         {isReadonly ? (
-          <Chat
-            chat={chat}
-            id={id}
-            isReadonly={isReadonly}
-            key={runtimeKey}
-            projectId={projectId}
-            routeSource={routeSource}
-          />
+          children
         ) : (
           <ChatInputProvider
             initialTool={initialTool ?? null}
@@ -70,14 +58,7 @@ export const ChatSystem = memo(function PureChatSystem({
             overrideModelId={overrideModelId}
           >
             <DataStreamHandler key={`stream:${runtimeKey}`} />
-            <Chat
-              chat={chat}
-              id={id}
-              isReadonly={isReadonly}
-              key={runtimeKey}
-              projectId={projectId}
-              routeSource={routeSource}
-            />
+            {children}
           </ChatInputProvider>
         )}
       </CustomStoreProvider>
