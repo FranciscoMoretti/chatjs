@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const packageDirectory = resolve(import.meta.dir, "..");
@@ -11,7 +12,7 @@ function run(command: string[], cwd: string) {
 		killSignal: "SIGKILL",
 		stderr: "pipe",
 		stdout: "pipe",
-		timeout: 25_000,
+		timeout: 60_000,
 	});
 	if (result.exitCode !== 0) {
 		throw new Error(
@@ -26,7 +27,7 @@ function run(command: string[], cwd: string) {
 
 test("the packed package loads its core and React entry points", async () => {
 	const temporaryDirectory = await mkdtemp(
-		join(packageDirectory, ".package-smoke-"),
+		join(tmpdir(), "chatjs-thread-package-"),
 	);
 
 	try {
@@ -47,20 +48,49 @@ test("the packed package loads its core and React entry points", async () => {
 		const installedPackage = join(
 			temporaryDirectory,
 			"node_modules",
-			"@chatjs",
+			"@chat-js",
 			"thread",
 		);
-		await mkdir(installedPackage, { recursive: true });
+		const metadata = await Bun.file(
+			join(packageDirectory, "package.json"),
+		).json();
+		await writeFile(
+			join(temporaryDirectory, "package.json"),
+			JSON.stringify({
+				private: true,
+				type: "module",
+				dependencies: {
+					"@chat-js/thread": "file:./thread.tgz",
+					ai: metadata.devDependencies.ai,
+				},
+			}),
+		);
+		run(["bun", "install", "--ignore-scripts"], temporaryDirectory);
+
+		const coreConsumerPath = join(temporaryDirectory, "core.mjs");
+		await writeFile(
+			coreConsumerPath,
+			`
+import assert from "node:assert/strict";
+import { Thread } from "@chat-js/thread";
+assert.equal(import.meta.resolve("@chat-js/thread"), new URL("./node_modules/@chat-js/thread/dist/index.js", import.meta.url).href);
+assert.equal(typeof new Thread().id, "string");
+assert.throws(() => import.meta.resolve("react"), { code: "ERR_MODULE_NOT_FOUND" });
+assert.throws(() => import.meta.resolve("@ai-sdk/react"), { code: "ERR_MODULE_NOT_FOUND" });
+`,
+		);
+		run(["node", coreConsumerPath], temporaryDirectory);
 		run(
 			[
-				"tar",
-				"-xzf",
-				join(temporaryDirectory, "thread.tgz"),
-				"-C",
-				installedPackage,
-				"--strip-components=1",
+				"bun",
+				"add",
+				"--ignore-scripts",
+				`react@${metadata.devDependencies.react}`,
+				`@ai-sdk/react@${metadata.devDependencies["@ai-sdk/react"]}`,
+				`@types/react@${metadata.devDependencies["@types/react"]}`,
+				`typescript@${metadata.devDependencies.typescript}`,
 			],
-			packageDirectory,
+			temporaryDirectory,
 		);
 
 		const indexSource = await readFile(
@@ -103,6 +133,17 @@ if (typeof chat.id !== "string" || typeof useThread !== "function") {
   throw new Error("Package exports did not load");
 }
 `;
+		const resolutionConsumerPath = join(temporaryDirectory, "resolution.mjs");
+		await writeFile(
+			resolutionConsumerPath,
+			`
+import assert from "node:assert/strict";
+for (const [specifier, file] of [["@chat-js/thread", "index.js"], ["@chat-js/thread/react", "react.js"]]) {
+  assert.equal(import.meta.resolve(specifier), new URL("./node_modules/@chat-js/thread/dist/" + file, import.meta.url).href);
+}
+`,
+		);
+		run(["node", resolutionConsumerPath], temporaryDirectory);
 		const runtimeConsumerPath = join(temporaryDirectory, "consumer.mjs");
 		const typeConsumerPath = join(temporaryDirectory, "consumer.ts");
 		await Promise.all([
@@ -113,7 +154,7 @@ if (typeof chat.id !== "string" || typeof useThread !== "function") {
 		run(["node", runtimeConsumerPath], temporaryDirectory);
 		run(
 			[
-				join(packageDirectory, "node_modules/.bin/tsc"),
+				join(temporaryDirectory, "node_modules/.bin/tsc"),
 				"--ignoreConfig",
 				"--noEmit",
 				"--strict",
@@ -131,4 +172,4 @@ if (typeof chat.id !== "string" || typeof useThread !== "function") {
 	} finally {
 		await rm(temporaryDirectory, { force: true, recursive: true });
 	}
-}, 30_000);
+}, 180_000);
