@@ -8,7 +8,7 @@ $ turbo run test:types
 @chat-js/thread:test:types: cache hit, replaying logs 246882f6cac2a1ff
 @chat-js/thread:test:types: $ tsc -p tsconfig.json --noEmit && bun run build
 @chat-js/thread:test:types: $ bun -e "import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true })" && tsc -p tsconfig.build.json && bun ./build.ts
-@chatjs/chat:test:types: cache miss, executing 78e8377e7a294f3c
+@chatjs/chat:test:types: cache miss, executing 8f7612883994a604
 @chatjs/site:test:types: cache hit, replaying logs 8c19e65479e39b43
 @chatjs/site:test:types: $ next typegen . && tsc --noEmit
 @chatjs/site:test:types: Generating route types...
@@ -19,4 +19,4 @@ $ turbo run test:types
 
  Tasks:    3 successful, 3 total
 Cached:    2 cached, 3 total
-  Time:    8.834s
+  Time:    8.603s

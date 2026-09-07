@@ -21,3 +21,11 @@ No model completion/reconnect, selective source/dependency omission, or framewor
 ## Next boundary
 
 This closes the narrow client extraction. Actual selectable generation/installation remains dependent on #313's accepted current-app contract; do not restore rejected #318 starter or make broader persistence/runtime changes from this proof. No product decision is required for this slice. Delete/retention/reconciliation choices remain unchanged.
+
+## Additional identity gates closed
+
+Four new mounted ReactDOM tests exercise the actual SessionProvider: unknown pending versus settled anonymous; streamed seed while client is pending/errored; settled null defeating an existing and later stale server seed; and current client account overriding an older seed. All4 pass, full app suite now153 passes. HappyDOM is a test-only dev dependency because existing Vitest runs in Node and no DOM component-test environment was installed. No auth production code changed.
+
+A real Chromium/Playwright probe now holds one actual `getAllChats` response produced by the app after browser rename, performs normal Log out, then releases that old response. The new document shows neither prior Dev User nor renamed history. Result: pass,1held response. Keyboard activation of the user menu was used because the Next dev indicator intercepted its pointer position in the headless viewport. It still invokes the real menu/logout; no direct auth call, synthetic router or forced application mutation. `delayed-logout.ts` is reproducible by temporarily copying into `apps/chat`, with the local app/database already started and at least one dev-user chat seeded. The fixture uses the configured6320 test origin, not a production site.
+
+Remaining unexecuted identity cases are actual cookie-cache expiry after300seconds, cross-account replacement without normal navigation, and native Electron sign-out/sync. The four mounted tests establish provider precedence, not all browser QueryClient transitions. No Electron app/session was launched for this web-only scope. The pending-response normal-logout gap is closed; it is no longer merely source evidence.

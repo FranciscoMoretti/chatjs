@@ -11,17 +11,17 @@ $ turbo run lint
 @chatjs/docs:lint: [blume] ℹ Pages: 72
 @chatjs/docs:lint: [blume] ℹ Output: static
 @chat-js/thread:lint: $ bunx @biomejs/biome@2.4.10 check src test build.ts README.md ARCHITECTURE.md package.json tsconfig.json tsconfig.build.json biome.jsonc
-@chat-js/thread:lint: Saved lockfile
-@chat-js/thread:lint: Checked 22 files in 28ms. No fixes applied.
 @chatjs/docs:lint: [blume] ℹ Search: orama
 @chatjs/docs:lint: [blume] ✔ No problems found.
-@chatjs/chat:lint: cache miss, executing 0e0cbd76b2da6fe8
+@chat-js/thread:lint: Saved lockfile
+@chat-js/thread:lint: Checked 22 files in 28ms. No fixes applied.
 @chatjs/site:lint: cache hit, replaying logs ae3fbf33915e4886
+@chatjs/chat:lint: cache miss, executing 9c6a242f2b7a0471
 @chatjs/site:lint: $ ultracite check
 @chatjs/site:lint: Checked 29 files in 14ms. No fixes applied.
 @chatjs/chat:lint: $ ultracite check
-@chatjs/chat:lint: Checked 489 files in 137ms. No fixes applied.
+@chatjs/chat:lint: Checked 490 files in 104ms. No fixes applied.
 
  Tasks:    4 successful, 4 total
 Cached:    3 cached, 4 total
-  Time:    387ms
+  Time:    326ms
