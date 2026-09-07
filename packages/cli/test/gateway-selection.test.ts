@@ -34,12 +34,11 @@ beforeAll(async () => {
 	await run(packageDirectory, ["bun", "run", "build"]);
 	await run(packageDirectory, ["bun", "pm", "pack", "--destination", root]);
 	await run(cliDirectory, ["bun", "run", "build"]);
-}, 30_000);
+});
 
 afterAll(async () => {
 	await rm(root, { recursive: true, force: true });
-// Six independently installed dependency trees can take longer to remove on CI/macOS.
-}, 120_000);
+});
 
 const external = externalGatewayFixture();
 const registryServer = Bun.serve({
