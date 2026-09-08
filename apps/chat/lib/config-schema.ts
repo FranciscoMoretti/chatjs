@@ -11,8 +11,8 @@ export type { GatewayType } from "@/lib/ai/gateways/registry";
 import {
   gatewayCapabilities,
   gatewayModelDefaults,
+  gatewayType,
 } from "./ai/gateway-model-defaults";
-import { DEFAULT_GATEWAY } from "./ai/gateways/registry";
 import type { ToolName } from "./ai/types";
 
 // Helper to create typed model ID schemas
@@ -157,7 +157,7 @@ function createAiSchema<G extends GatewayType>(g: G) {
   });
 }
 
-const installedGatewaySchema = createAiSchema(DEFAULT_GATEWAY);
+const installedGatewaySchema = createAiSchema(gatewayType);
 
 export const aiConfigSchema = installedGatewaySchema
   .superRefine((ai, ctx) => {
@@ -172,7 +172,7 @@ export const aiConfigSchema = installedGatewaySchema
     }
   })
   .default({
-    gateway: DEFAULT_GATEWAY,
+    gateway: gatewayType,
     ...gatewayModelDefaults,
   });
 
@@ -563,7 +563,7 @@ function mergeToolsConfig<T extends Record<string, unknown>>(
 
 // Apply defaults to partial config
 export function applyDefaults(input: ConfigInput): Config {
-  const gateway = input.ai?.gateway ?? DEFAULT_GATEWAY;
+  const gateway = input.ai?.gateway ?? gatewayType;
   const gatewayDefaults = gatewayModelDefaults;
   const aiInput = input.ai as Record<string, unknown> | undefined;
 
