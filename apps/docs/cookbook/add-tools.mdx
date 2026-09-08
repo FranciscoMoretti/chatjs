@@ -39,8 +39,10 @@ After a direct shadcn install, or a reported registration failure, run:
 npx @chat-js/cli@latest sync
 ```
 
-Sync validates descriptors, duplicate keys, and generated-index integrity before
-writing registrations. A missing or mismatched requested descriptor is an error.
+Sync validates descriptors, duplicate installed descriptor keys, and generated-index
+integrity before writing registrations. Generated indexes detect collisions with
+custom registrations when loaded. A missing or mismatched requested descriptor is
+an error.
 
 ## Related
 

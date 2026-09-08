@@ -25,8 +25,9 @@ Existing source follows shadcn's overwrite prompts. Pass `--overwrite` to replac
 | `tools/chatjs/tools.ts`, `ui.ts` | Generated registrations |
 | `tools/chatjs/custom-tools.ts`, `custom-ui.ts` | Your custom registrations |
 
-Keep manual registrations in the custom modules. Sync rejects duplicate keys and
-edited generated indexes. It also refuses to remove a previously registered tool
+Keep manual registrations in the custom modules. Sync rejects duplicate installed
+descriptor keys and edited generated indexes. Generated indexes detect collisions
+with custom registrations when loaded. Sync also refuses to remove a previously registered tool
 just because its descriptor disappeared. Restore the descriptor before syncing.
 Known legacy built-in indexes migrate automatically. Customized legacy indexes
 need an explicit move into the custom modules before removing the old indexes.
