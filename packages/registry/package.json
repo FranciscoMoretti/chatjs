@@ -42,7 +42,9 @@
   },
   "scripts": {
     "build": "bun build.ts && bun build-gateways.ts",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "test:types": "tsc --noEmit",
+    "test:unit": "bun test src"
   },
   "dependencies": {
     "ts-morph": "^27.0.2"
@@ -57,6 +59,12 @@
     "@openrouter/ai-sdk-provider": "3.0.0",
     "@ai-sdk/anthropic": "4.0.49",
     "@ai-sdk/google": "4.0.64",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "typescript": "6.0.2",
+    "@types/bun": "latest",
+    "@types/react": "19.2.7",
+    "react": "19.2.4",
+    "date-fns": "^4.1.0",
+    "@mendable/firecrawl-js": "1.29.1"
   }
 }

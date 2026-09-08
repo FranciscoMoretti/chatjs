@@ -3,10 +3,10 @@
 import { format, isWithinInterval } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import type { TypelessToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-part";
+import type { ToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-part";
 import type { getWeather, WeatherAtLocation } from "./tool";
 
-type GetWeatherRendererTool = TypelessToolPartFromTool<typeof getWeather>;
+type GetWeatherRendererTool = ToolPartFromTool<typeof getWeather>;
 
 const SAMPLE = {
   latitude: 37.763_283,
