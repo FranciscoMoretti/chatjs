@@ -4,7 +4,7 @@ questions:
   - id: node-version
     question: What Node.js version does ChatJS require?
     expected:
-      - Node 22 or newer
+      - Node 22.12 or newer
     routes:
       - /quickstart
   - id: create-app

@@ -53,12 +53,13 @@ data yet, you archive a half-rendered frame. Drive it to its final state first â
 helper, wait for the content to appear, then let the test end (or call `takeSnapshot()`):
 
 ```ts
+import { expect } from 'vitest';
 import { render } from 'vitest-browser-react'; // or your framework's browser render helper
 import { takeSnapshot } from '@uiverify/vitest';
 
 test('user card', async () => {
   const screen = await render(<UserCard id="u_1" />); // render() is async - await it, or `screen` is a Promise
-  await screen.getByText('Ada Lovelace').query(); // wait for the settled state, THEN archive
+  await expect.element(screen.getByText('Ada Lovelace')).toBeVisible(); // wait for settled content
   await takeSnapshot();
 });
 ```

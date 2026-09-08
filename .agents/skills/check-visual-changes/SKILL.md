@@ -40,6 +40,9 @@ It does **not** run your build or your tests for you — you prepare the capture
 same input the matching capture skill produces (`storybook-visual-testing`, `playwright-visual-testing`,
 `vitest-visual-testing`), then point `check` at it.
 
+Before upload, inspect the capture input for secrets, PII, and private customer content. Capture public
+pages or sanitized fixtures only; regenerate any unsafe archive or screenshot set before continuing.
+
 `UIVERIFY_API_KEY` (a `uv_proj_…` project key) must be set. All four methods take `--strict`/`--no-strict`
 and `--working-directory` like `uiverify upload`.
 

@@ -19,7 +19,7 @@ can't render, so the pixels are useless to a script; a native client shows them 
 **Claude Code:**
 ```sh
 claude mcp add --transport http uiverify https://uiverify.ai/api/mcp \
-  --header "Authorization: Bearer $UIVERIFY_API_KEY"
+  --header 'Authorization: Bearer ${UIVERIFY_API_KEY}'
 ```
 
 **Cursor** — add to `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global):
@@ -28,7 +28,7 @@ claude mcp add --transport http uiverify https://uiverify.ai/api/mcp \
   "mcpServers": {
     "uiverify": {
       "url": "https://uiverify.ai/api/mcp",
-      "headers": { "Authorization": "Bearer YOUR_uv_proj_KEY" }
+      "headers": { "Authorization": "Bearer ${env:UIVERIFY_API_KEY}" }
     }
   }
 }

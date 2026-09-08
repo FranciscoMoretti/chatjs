@@ -2,7 +2,7 @@
 	"name": "@chatjs/docs",
 	"private": true,
 	"engines": {
-		"node": ">=22 <25"
+		"node": ">=22.12.0 <25"
 	},
 	"volta": {
 		"node": "22.22.2"
