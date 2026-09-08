@@ -32,7 +32,7 @@ export class VercelGateway
       VercelVideoModelId
     >
 {
-  readonly type = "vercel" as const;
+  readonly type = "vercel";
 
   createLanguageModel(modelId: VercelLanguageModelId): LanguageModelV4 {
     return this.getProvider()(modelId);
