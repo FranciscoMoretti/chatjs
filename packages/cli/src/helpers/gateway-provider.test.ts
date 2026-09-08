@@ -141,3 +141,35 @@ it("rejects incompatible contracts, cycles and unsafe or conflicting files befor
 		);
 	}
 });
+
+it("rejects symlinked fixed outputs and missing snapshots before modifying the adapter", async () => {
+	const { symlink } = await import("node:fs/promises");
+	const directory = await mkdtemp(join(tmpdir(), "chatjs-preflight-"));
+	directories.push(directory);
+	await scaffoldFromTemplate(directory);
+	const gateway = join(directory, "lib/ai/gateway.ts");
+	const original = await readFile(gateway, "utf8");
+	for (const target of [
+		"package.json",
+		".env.example",
+		"lib/ai/models.generated.ts",
+		"lib/ai/gateway-model-defaults.ts",
+	]) {
+		const path = join(directory, target);
+		const content = await readFile(path, "utf8");
+		const outside = join(directory, "sentinel");
+		await writeFile(outside, content);
+		await rm(path);
+		await symlink(outside, path);
+		await expect(configureGatewayProvider(directory, "openai")).rejects.toThrow(
+			"symlink",
+		);
+		expect(await readFile(gateway, "utf8")).toBe(original);
+		expect(await readFile(outside, "utf8")).toBe(content);
+		await rm(path);
+		await writeFile(path, content);
+	}
+	await rm(join(directory, "lib/ai/models.generated.ts"));
+	await expect(configureGatewayProvider(directory, "openai")).rejects.toThrow();
+	expect(await readFile(gateway, "utf8")).toBe(original);
+});

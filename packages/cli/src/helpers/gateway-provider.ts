@@ -43,17 +43,6 @@ export async function configureGatewayProvider(
 			}
 			if (files.has(target))
 				throw new Error(`Conflicting gateway registry file: ${target}`);
-			// Reject symlinks before any writes, including an existing parent directory.
-			let path = destination;
-			for (const part of target.split("/")) {
-				path = join(path, part);
-				const entry = await lstat(path).catch((error) => {
-					if (error.code === "ENOENT") return null;
-					throw error;
-				});
-				if (entry?.isSymbolicLink())
-					throw new Error(`Gateway target contains a symlink: ${target}`);
-			}
 			files.set(target, file.content);
 		}
 	}
@@ -79,6 +68,39 @@ export async function configureGatewayProvider(
 			}
 		}
 	}
+	// Check every output, not only paths supplied by the registry, before mutation.
+	for (const target of new Set([
+		...files.keys(),
+		"package.json",
+		".env.example",
+		"lib/ai/gateway-model-defaults.ts",
+		"lib/ai/models.generated.ts",
+	])) {
+		let path = destination;
+		for (const part of target.split("/")) {
+			path = join(path, part);
+			const entry = await lstat(path).catch((error) => {
+				if (error.code === "ENOENT") return null;
+				throw error;
+			});
+			if (entry?.isSymbolicLink())
+				throw new Error(`Gateway target contains a symlink: ${target}`);
+			if (
+				entry &&
+				(path === join(destination, target)
+					? !entry.isFile()
+					: !entry.isDirectory())
+			)
+				throw new Error(`Invalid gateway target: ${target}`);
+		}
+	}
+	const snapshotPath = join(destination, "lib/ai/models.generated.ts");
+	const snapshot = await readFile(snapshotPath, "utf8");
+	const example = join(destination, ".env.example");
+	let env = await readFile(example, "utf8").catch((error) => {
+		if (error.code === "ENOENT") return "";
+		throw error;
+	});
 	const gatewayPath = join(destination, "lib/ai/gateway.ts");
 	const current = await readFile(gatewayPath, "utf8");
 	const manifestPath = join(destination, "package.json");
@@ -129,8 +151,6 @@ export const gatewayEnvRequirements = ${JSON.stringify(definition.envRequirement
 export const gatewayEnvVariables = ${JSON.stringify([...new Set([...definition.envRequirements.flatMap((r) => r.options.flat()), ...definition.optionalEnv])])};
 `,
 	);
-	const snapshotPath = join(destination, "lib/ai/models.generated.ts");
-	const snapshot = await readFile(snapshotPath, "utf8");
 	if (
 		!snapshot.includes(`generatedForGateway = ${JSON.stringify(definition.id)}`)
 	) {
@@ -144,8 +164,6 @@ export const models: readonly AiGatewayModel[] = [];
 `,
 		);
 	}
-	const example = join(destination, ".env.example");
-	let env = await readFile(example, "utf8").catch(() => "");
 	for (const name of new Set(
 		definition.envRequirements.flatMap((r) => r.options.flat()),
 	)) {

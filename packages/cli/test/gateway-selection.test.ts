@@ -18,11 +18,12 @@ const archive = join(root, `chat-js-gateways-${gatewayPackage.version}.tgz`);
 
 async function run(cwd: string, command: string[]) {
 	const child = Bun.spawn(command, { cwd, stdout: "pipe", stderr: "pipe" });
+	const timeout = setTimeout(() => child.kill(), 180_000);
 	const [exitCode, stdout, stderr] = await Promise.all([
 		child.exited,
 		new Response(child.stdout).text(),
 		new Response(child.stderr).text(),
-	]);
+	]).finally(() => clearTimeout(timeout));
 	if (exitCode !== 0) {
 		throw new Error(
 			`${command.join(" ")} failed in ${cwd}:\n${stdout}\n${stderr}`,
@@ -37,7 +38,17 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-	await rm(root, { recursive: true, force: true });
+	let timeout: ReturnType<typeof setTimeout> | undefined;
+	try {
+		await Promise.race([
+			rm(root, { recursive: true, force: true }),
+			new Promise<never>((_, reject) => {
+				timeout = setTimeout(() => reject(new Error("Gateway test cleanup timed out")), 180_000);
+			}),
+		]);
+	} finally {
+		clearTimeout(timeout);
+	}
 });
 
 const external = externalGatewayFixture();

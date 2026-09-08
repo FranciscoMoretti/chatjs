@@ -68,6 +68,7 @@ NODE
     yarn) yarn install ;;
     *) echo "Unsupported package manager: $package_manager" >&2; exit 1 ;;
   esac
+  node --input-type=module -e 'for (const path of ["defaults", "models", "gateway-provider", "provider-options", "runtime", "provider-types", "definition"]) await import("@chat-js/gateways/" + path);'
   popd >/dev/null
 
   if [ "$electron_flag" = "true" ]; then

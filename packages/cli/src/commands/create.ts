@@ -175,10 +175,14 @@ export const create = new Command()
 				options.gateway ? options.registry : undefined,
 			);
 			const gateway = gatewaySelection.definition.id;
-			const coreFeatures = await promptCoreFeatures(options.yes);
+			const coreFeatures = await promptCoreFeatures(
+				options.yes,
+				gatewaySelection.definition,
+			);
 			const documentTypes = await promptDocumentTypes(
 				options.yes,
 				coreFeatures.documents,
+				gatewaySelection.definition,
 			);
 
 			let registryItems: Awaited<ReturnType<typeof fetchRegistryIndex>> = [];

@@ -1,9 +1,5 @@
 import { builtInGateways } from "../registry/gateways";
-import type {
-	AuthProvider,
-	BuiltInToolKey,
-	CoreFeatureKey,
-} from "../types";
+import type { AuthProvider, BuiltInToolKey, CoreFeatureKey } from "../types";
 
 type EnvVarName = string;
 
@@ -12,12 +8,18 @@ export interface EnvRequirement {
 	options: EnvVarName[][];
 }
 
-export const gatewayEnvRequirements: Record<string, EnvRequirement> = Object.fromEntries(
-  builtInGateways.map(item => [item.meta.chatjs.id, {
-    ...item.meta.chatjs.envRequirements[0],
-    description: item.meta.chatjs.envRequirements[0].options.map(option => option.join(" + ")).join(" or "),
-  }])
-);
+export const gatewayEnvRequirements: Record<string, EnvRequirement[]> =
+	Object.fromEntries(
+		builtInGateways.map((item) => [
+			item.meta.chatjs.id,
+			item.meta.chatjs.envRequirements.map((requirement) => ({
+				...requirement,
+				description:
+					requirement.description ??
+					requirement.options.map((option) => option.join(" + ")).join(" or "),
+			})),
+		]),
+	);
 
 export const coreFeatureEnvRequirements: Partial<
 	Record<CoreFeatureKey, EnvRequirement>

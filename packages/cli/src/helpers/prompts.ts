@@ -12,7 +12,6 @@ import {
 	AUTHENTICATION_DEFAULTS,
 	FEATURES_DEFAULTS,
 } from "../../../../apps/chat/lib/config-schema";
-import { builtInGateways } from "../registry/gateways";
 import type { GatewayDefinition } from "@chat-js/gateways/definition";
 import {
 	authEnvRequirements,
@@ -40,31 +39,6 @@ import {
 	resolveStorageProvider,
 	type StorageSelection,
 } from "./storage-provider";
-
-const defaultTools = builtInGateways[0].meta.chatjs.defaults.tools;
-
-const CORE_FEATURE_DEFAULTS: Record<CoreFeatureKey, boolean> = {
-	attachments: FEATURES_DEFAULTS.attachments,
-	parallelResponses: FEATURES_DEFAULTS.parallelResponses,
-	documents: defaultTools.documents.enabled,
-	mcp: defaultTools.mcp.enabled,
-	followupSuggestions: defaultTools.followupSuggestions.enabled,
-};
-
-const DOCUMENT_TYPE_DEFAULTS: Record<DocumentTypeKey, boolean> = {
-	text: defaultTools.documents.types.text,
-	code: defaultTools.documents.types.code,
-	sheet: defaultTools.documents.types.sheet,
-};
-
-const BUILT_IN_TOOL_DEFAULTS: Record<BuiltInToolKey, boolean> = {
-	webSearch: defaultTools.webSearch.enabled,
-	urlRetrieval: defaultTools.urlRetrieval.enabled,
-	deepResearch: defaultTools.deepResearch.enabled,
-	codeExecution: defaultTools.codeExecution.enabled,
-	imageGeneration: defaultTools.image.enabled,
-	videoGeneration: defaultTools.video.enabled,
-};
 
 const AUTH_DEFAULTS: Record<AuthProvider, boolean> = AUTHENTICATION_DEFAULTS;
 
@@ -114,15 +88,15 @@ function isSupportedBuiltInTool(
 
 	if (key === "imageGeneration") {
 		return (
-			typeof (gatewayToolDefaults.image as { default?: unknown }).default ===
-			"string"
+			gateway.capabilities.image &&
+			typeof gatewayToolDefaults.image.default === "string"
 		);
 	}
 
 	if (key === "videoGeneration") {
 		return (
-			typeof (gatewayToolDefaults.video as { default?: unknown }).default ===
-			"string"
+			gateway.capabilities.video &&
+			typeof gatewayToolDefaults.video.default === "string"
 		);
 	}
 
@@ -190,7 +164,9 @@ export async function promptGateway(skipPrompt: boolean): Promise<Gateway> {
 			...GATEWAYS.map((gw) => ({
 				value: gw,
 				label: gw,
-				hint: gatewayEnvRequirements[gw].description,
+				hint: gatewayEnvRequirements[gw]
+					.map((requirement) => requirement.description)
+					.join("; "),
 			})),
 			{
 				value: "__external__",
@@ -271,7 +247,17 @@ export async function promptStorage(
 
 export async function promptCoreFeatures(
 	skipPrompt: boolean,
+	gateway: GatewayDefinition,
 ): Promise<Record<CoreFeatureKey, boolean>> {
+	const defaultTools = gateway.defaults.tools;
+	const CORE_FEATURE_DEFAULTS: Record<CoreFeatureKey, boolean> = {
+		attachments: FEATURES_DEFAULTS.attachments,
+		parallelResponses: FEATURES_DEFAULTS.parallelResponses,
+		documents: defaultTools.documents.enabled,
+		mcp: defaultTools.mcp.enabled,
+		followupSuggestions: defaultTools.followupSuggestions.enabled,
+	};
+
 	if (skipPrompt) return { ...CORE_FEATURE_DEFAULTS };
 
 	const selected = await multiselect({
@@ -299,7 +285,15 @@ export async function promptCoreFeatures(
 export async function promptDocumentTypes(
 	skipPrompt: boolean,
 	documentsEnabled: boolean,
+	gateway: GatewayDefinition,
 ): Promise<Record<DocumentTypeKey, boolean>> {
+	const defaultTools = gateway.defaults.tools;
+	const DOCUMENT_TYPE_DEFAULTS: Record<DocumentTypeKey, boolean> = {
+		text: defaultTools.documents.types.text,
+		code: defaultTools.documents.types.code,
+		sheet: defaultTools.documents.types.sheet,
+	};
+
 	if (!documentsEnabled) {
 		return toSelectionRecord(DOCUMENT_TYPE_KEYS, []);
 	}
@@ -331,6 +325,16 @@ export async function promptAssistantTools(
 	builtInTools: Record<BuiltInToolKey, boolean>;
 	installableTools: string[];
 }> {
+	const defaultTools = gateway.defaults.tools;
+	const BUILT_IN_TOOL_DEFAULTS: Record<BuiltInToolKey, boolean> = {
+		webSearch: defaultTools.webSearch.enabled,
+		urlRetrieval: defaultTools.urlRetrieval.enabled,
+		deepResearch: defaultTools.deepResearch.enabled,
+		codeExecution: defaultTools.codeExecution.enabled,
+		imageGeneration: defaultTools.image.enabled,
+		videoGeneration: defaultTools.video.enabled,
+	};
+
 	const installableItems = registryItems.filter((item) => !item.hidden);
 	const supportedBuiltInTools = BUILT_IN_TOOL_KEYS.filter((key) =>
 		isSupportedBuiltInTool(gateway, key),
