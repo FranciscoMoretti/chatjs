@@ -7,7 +7,7 @@ import {
 	text,
 } from "@clack/prompts";
 import { getProvider } from "files-sdk/providers";
-import type { RegistryIndexItem } from "../registry/fetch";
+import type { RegistryIndexItem } from "../registry/schema";
 import {
 	AUTHENTICATION_DEFAULTS,
 	FEATURES_DEFAULTS,
@@ -184,7 +184,7 @@ export async function promptGateway(skipPrompt: boolean): Promise<Gateway> {
 				value?.trim() ? undefined : "Enter a registry item address",
 		});
 		handleCancel(source);
-		return source.trim();
+		return String(source).trim();
 	}
 	return gateway;
 }
@@ -439,19 +439,4 @@ export async function promptElectron(
 	handleCancel(wantsElectron);
 
 	return wantsElectron;
-}
-
-export async function promptInstall(
-	packageManager: string,
-	skipPrompt: boolean,
-): Promise<boolean> {
-	if (skipPrompt) return true;
-
-	const install = await confirm({
-		message: `Install dependencies with ${highlighter.info(packageManager)}?`,
-		initialValue: true,
-	});
-	handleCancel(install);
-
-	return install;
 }

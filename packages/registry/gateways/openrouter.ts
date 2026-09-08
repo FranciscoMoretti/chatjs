@@ -154,7 +154,7 @@ export class OpenRouterGateway
       if (!response.ok) {
         this.log.error(
           { status: response.status, statusText: response.statusText, url },
-          "OpenRouter returned non-OK response",
+          "OpenRouter returned non-OK response"
         );
         throw new Error(`Failed to fetch models: ${response.statusText}`);
       }
@@ -165,15 +165,17 @@ export class OpenRouterGateway
 
       this.log.info(
         { modelCount: result.length },
-        "Successfully fetched models from OpenRouter",
+        "Successfully fetched models from OpenRouter"
       );
       return result;
     } catch (error) {
       this.log.error(
         { err: error, url },
-        "Error fetching models from OpenRouter, falling back to generated models",
+        "Error fetching models from OpenRouter, falling back to generated models"
       );
       return [...this.getFallbackModels(this.type)];
     }
   }
 }
+
+export { OpenRouterGateway as Gateway };

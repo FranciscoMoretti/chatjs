@@ -1,4 +1,3 @@
-// ChatJS gateway dependency: @ai-sdk/gateway
 import { createGateway, type gateway } from "@ai-sdk/gateway";
 import type {
   Experimental_VideoModelV4,

@@ -1,15 +1,17 @@
 import { existsSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import { basename, join, relative, resolve } from "node:path";
 import { intro, outro } from "@clack/prompts";
 import { Command } from "commander";
 import { z } from "zod";
+import { toolDefinitionSchema } from "../../../registry/metadata";
 import { buildConfigTs } from "../helpers/config-builder";
 import { ensureTargetEmpty } from "../helpers/ensure-target";
 import {
 	collectEnvChecklist,
 	type EnvVarEntry,
 } from "../helpers/env-checklist";
+import { configureGatewayProvider } from "../helpers/gateway-provider";
 import {
 	promptAssistantTools,
 	promptAuth,
@@ -17,7 +19,6 @@ import {
 	promptDocumentTypes,
 	promptElectron,
 	promptGateway,
-	promptInstall,
 	promptProjectName,
 	promptStorage,
 } from "../helpers/prompts";
@@ -28,16 +29,20 @@ import {
 } from "../helpers/scaffold";
 import { storageEnvRequirements } from "../helpers/storage-provider";
 import { resolveGateway } from "../registry/gateways";
-import type { EnvRequirement as RegistryEnvRequirement } from "../registry/schema";
-import { fetchRegistryIndex } from "../registry/fetch";
-import { resolveToolsPath } from "../utils/get-config";
-import { inferPackageManager } from "../utils/get-package-manager";
+import {
+	installItems,
+	itemAddress,
+	listTools,
+	readItem,
+} from "../registry/shadcn";
+import { launcherPackageManager } from "../utils/get-package-manager";
 import { handleError } from "../utils/handle-error";
 import { highlighter } from "../utils/highlighter";
-import { installRegistryTools } from "../utils/install-registry-tools";
 import { logger } from "../utils/logger";
+import { preflight } from "../utils/preflight";
 import { runCommand } from "../utils/run-command";
 import { spinner } from "../utils/spinner";
+import { syncTools } from "../utils/sync-tools";
 
 function resolveCreateTarget(targetArg: string | undefined): {
 	projectName: string;
@@ -93,11 +98,8 @@ function printEnvChecklist(entries: EnvVarEntry[]): void {
 const createOptionsSchema = z.object({
 	target: z.string().optional(),
 	yes: z.boolean(),
-	install: z.boolean(),
 	electron: z.boolean().optional(),
 	fromGit: z.string().optional(),
-	registry: z.string().optional(),
-	packageManager: z.enum(["bun", "npm", "pnpm", "yarn"]).optional(),
 	storageProvider: z.string().optional(),
 	storageConfig: z.string().optional(),
 	gateway: z.string().optional(),
@@ -112,17 +114,8 @@ export const create = new Command()
 		"gateway name, registry item URL, or local JSON path",
 	)
 	.option("-y, --yes", "skip prompts and use defaults", false)
-	.option("--no-install", "skip dependency installation")
 	.option("--electron", "include the Electron desktop app")
 	.option("--no-electron", "do not include the Electron desktop app")
-	.option(
-		"-r, --registry <url>",
-		"registry URL or local path template (e.g. ./packages/registry/items/{name}.json)",
-	)
-	.option(
-		"--package-manager <manager>",
-		"package manager for install + next steps (bun, npm, pnpm, yarn)",
-	)
 	.option(
 		"--from-git <url>",
 		"clone from a git repository instead of the built-in scaffold",
@@ -142,7 +135,7 @@ export const create = new Command()
 				...opts,
 			});
 
-			const packageManager = options.packageManager ?? inferPackageManager();
+			const packageManager = launcherPackageManager();
 
 			if (!options.yes) {
 				intro("Create ChatJS App");
@@ -171,10 +164,7 @@ export const create = new Command()
 
 			const gatewaySource =
 				options.gateway ?? (await promptGateway(options.yes));
-			const gatewaySelection = await resolveGateway(
-				gatewaySource,
-				options.gateway ? options.registry : undefined,
-			);
+			const gatewaySelection = await resolveGateway(gatewaySource, targetDir);
 			const gateway = gatewaySelection.definition.id;
 			const coreFeatures = await promptCoreFeatures(
 				options.yes,
@@ -186,12 +176,12 @@ export const create = new Command()
 				gatewaySelection.definition,
 			);
 
-			let registryItems: Awaited<ReturnType<typeof fetchRegistryIndex>> = [];
+			let registryItems: Awaited<ReturnType<typeof listTools>> = [];
 			if (!options.yes) {
 				const registrySpinner = spinner("Loading installable tools...");
 				registrySpinner.start();
 				try {
-					registryItems = await fetchRegistryIndex(options.registry);
+					registryItems = await listTools(targetDir);
 					registrySpinner.succeed("Installable tools loaded.");
 				} catch (error) {
 					registrySpinner.fail("Could not load installable tools.");
@@ -208,6 +198,16 @@ export const create = new Command()
 				options.yes,
 				gatewaySelection.definition,
 			);
+			const toolSources = assistantTools.installableTools.map((tool) =>
+				itemAddress(tool, "tool"),
+			);
+			const expectedTools = [];
+			for (const source of toolSources)
+				expectedTools.push(
+					toolDefinitionSchema.parse(
+						(await readItem(source, targetDir)).meta?.chatjs,
+					),
+				);
 			const usesStorage =
 				coreFeatures.attachments ||
 				assistantTools.builtInTools.imageGeneration ||
@@ -233,7 +233,6 @@ export const create = new Command()
 				if (options.fromGit) {
 					await scaffoldFromGit(options.fromGit, targetDir, {
 						storage,
-						gateway: gatewaySelection,
 					});
 					if (!existsSync(join(targetDir, "lib/ai/gateway.ts"))) {
 						scaffoldSpinner.succeed("Repository cloned.");
@@ -242,11 +241,18 @@ export const create = new Command()
 						);
 						return;
 					}
+					// create owns the new clone's selected gateway. Remove this one slot
+					// before shadcn installs so skipping a file cannot mismatch defaults.
+					await preflight(targetDir, [
+						"lib/ai/gateway.ts",
+						"chat.config.ts",
+						"package.json",
+					]);
+					await rm(join(targetDir, "lib/ai/gateway.ts"));
 				} else {
 					await scaffoldFromTemplate(targetDir, {
 						packageManager,
 						storage,
-						gateway: gatewaySelection,
 					});
 				}
 				if (withElectron) {
@@ -294,37 +300,51 @@ export const create = new Command()
 				throw error;
 			}
 
-			const installNow = !options.install
-				? false
-				: await promptInstall(packageManager, options.yes);
-
-			let installableToolEnvRequirements: RegistryEnvRequirement[] = [];
-			if (assistantTools.installableTools.length > 0) {
-				const toolsDir = resolveToolsPath("@/tools/chatjs", targetDir);
-				const registryInstall = await installRegistryTools({
-					tools: assistantTools.installableTools,
-					cwd: targetDir,
-					toolsDir,
-					toolsAlias: "@/tools/chatjs",
-					registryUrl: options.registry,
-					installDependenciesNow: false,
-					packageManager,
+			const installSpinner = spinner(
+				"Installing selected registry items...",
+			).start();
+			let installedTools: Awaited<ReturnType<typeof syncTools>> = [];
+			try {
+				await installItems(
+					[gatewaySelection.source, ...toolSources],
+					targetDir,
+				);
+				await configureGatewayProvider(targetDir, gatewaySelection);
+				installedTools = await syncTools(targetDir, {
+					expected: expectedTools,
 				});
-				installableToolEnvRequirements = registryInstall.envRequirements;
-			}
-
-			if (installNow) {
-				const installSpinner = spinner(
-					`Installing dependencies with ${highlighter.info(packageManager)}...`,
-				).start();
-				try {
-					await runCommand(packageManager, ["install"], targetDir);
-					installSpinner.succeed("Dependencies installed.");
-				} catch (error) {
-					installSpinner.fail("Failed to install dependencies.");
-					throw error;
+				// Also materialize scaffold dependencies when registry requirements were already declared.
+				await runCommand(packageManager, ["install"], targetDir);
+				// Normalize copied template imports without imposing a formatter on
+				// custom clones. Generated registration indexes are excluded in Biome.
+				if (!options.fromGit) {
+					await runCommand(
+						packageManager,
+						[
+							...(packageManager === "npm"
+								? ["exec", "--"]
+								: packageManager === "pnpm"
+									? ["exec"]
+									: ["run"]),
+							"biome",
+							"check",
+							"--write",
+							"--linter-enabled=false",
+							".",
+						],
+						targetDir,
+					);
 				}
+				installSpinner.succeed("Registry items installed and configured.");
+			} catch (error) {
+				installSpinner.fail(
+					"Installation failed; the project may be partially installed.",
+				);
+				throw error;
 			}
+			const installableToolEnvRequirements = installedTools.flatMap(
+				(tool) => tool.envRequirements,
+			);
 
 			const envEntries = collectEnvChecklist({
 				gateway,
@@ -350,24 +370,12 @@ export const create = new Command()
 			logger.log(
 				`  ${highlighter.dim("2.")} Copy ${highlighter.info(".env.example")} to ${highlighter.info(".env.local")} and fill in the values below`,
 			);
-			if (!installNow) {
-				logger.log(
-					`  ${highlighter.dim("3.")} ${highlighter.info(`${packageManager} install`)}`,
-				);
-				logger.log(
-					`  ${highlighter.dim("4.")} ${highlighter.info(`${packageManager} run db:push`)}`,
-				);
-				logger.log(
-					`  ${highlighter.dim("5.")} ${highlighter.info(`${packageManager} run dev`)}`,
-				);
-			} else {
-				logger.log(
-					`  ${highlighter.dim("3.")} ${highlighter.info(`${packageManager} run db:push`)}`,
-				);
-				logger.log(
-					`  ${highlighter.dim("4.")} ${highlighter.info(`${packageManager} run dev`)}`,
-				);
-			}
+			logger.log(
+				`  ${highlighter.dim("3.")} ${highlighter.info(`${packageManager} run db:push`)}`,
+			);
+			logger.log(
+				`  ${highlighter.dim("4.")} ${highlighter.info(`${packageManager} run dev`)}`,
+			);
 			if (withElectron) {
 				logger.break();
 				logger.info("Electron desktop app:");

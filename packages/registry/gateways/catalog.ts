@@ -1,20 +1,8 @@
-import vercelSource from "./vercel.ts" with { type: "text" };
-import openaiSource from "./openai.ts" with { type: "text" };
-import compatibleSource from "./openai-compatible.ts" with { type: "text" };
-import openrouterSource from "./openrouter.ts" with { type: "text" };
-import litellmSource from "./litellm.ts" with { type: "text" };
 import { gatewayDefinitionSchema } from "@chat-js/gateways/definition";
 import gatewayPackage from "@chat-js/gateways/package.json";
 import { GATEWAY_MODEL_DEFAULTS } from "./defaults";
 import { gatewayMetadata } from "./metadata";
 
-const sources = {
-  vercel: vercelSource,
-  openai: openaiSource,
-  "openai-compatible": compatibleSource,
-  openrouter: openrouterSource,
-  litellm: litellmSource,
-};
 const environment = {
   vercel: [["AI_GATEWAY_API_KEY"], ["VERCEL_OIDC_TOKEN"]],
   openai: [["OPENAI_API_KEY"]],
@@ -27,7 +15,7 @@ const environment = {
 
 export const builtInGateways = Object.entries(gatewayMetadata).map(
   ([id, metadata]) => {
-    const name = id as keyof typeof sources;
+    const name = id as keyof typeof environment;
     return {
       $schema: "https://ui.shadcn.com/schema/registry-item.json",
       name: `${id}-gateway`,
@@ -42,7 +30,6 @@ export const builtInGateways = Object.entries(gatewayMetadata).map(
           path: `gateways/${id}.ts`,
           type: "registry:file" as const,
           target: "~/lib/ai/gateway.ts",
-          content: `${sources[name]}\nexport { ${metadata.exportName} as Gateway };\n`,
         },
       ],
       meta: {

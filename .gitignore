@@ -78,8 +78,7 @@ apps/electron/branding.json
 .cursor/hooks/state
 .codex/environments/
 
-# Generated gateway registry payloads
-packages/registry/items/*-gateway.json
-packages/registry/gateways.json
-
 apps/docs/.uiverify-shots/
+
+# Generated shadcn source manifest
+packages/registry/registry.json

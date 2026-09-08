@@ -82,7 +82,7 @@ export class VercelGateway
       if (!response.ok) {
         this.log.error(
           { status: response.status, statusText: response.statusText, url },
-          "Vercel AI Gateway returned non-OK response",
+          "Vercel AI Gateway returned non-OK response"
         );
         throw new Error(`Failed to fetch models: ${response.statusText}`);
       }
@@ -109,21 +109,23 @@ export class VercelGateway
             skippedModelCount: body.data.length - models.length,
             modelCount: body.data.length,
           },
-          "Skipping models with unsupported types from Vercel AI Gateway",
+          "Skipping models with unsupported types from Vercel AI Gateway"
         );
       }
 
       this.log.info(
         { modelCount: models.length },
-        "Successfully fetched models from Vercel AI Gateway",
+        "Successfully fetched models from Vercel AI Gateway"
       );
       return models;
     } catch (error) {
       this.log.error(
         { err: error, url },
-        "Error fetching models from Vercel AI Gateway, falling back to generated models",
+        "Error fetching models from Vercel AI Gateway, falling back to generated models"
       );
       return [...this.getFallbackModels(this.type)];
     }
   }
 }
+
+export { VercelGateway as Gateway };
