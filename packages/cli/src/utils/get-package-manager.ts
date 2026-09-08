@@ -7,10 +7,28 @@ export function inferPackageManager(cwd = process.cwd()): PackageManager {
 	while (true) {
 		const manifestPath = path.join(currentDir, "package.json");
 		if (fs.existsSync(manifestPath)) {
-			const declared = JSON.parse(
-				fs.readFileSync(manifestPath, "utf8"),
-			).packageManager?.split("@")[0];
-			if (["bun", "npm", "pnpm", "yarn"].includes(declared)) return declared;
+			try {
+				const manifest: unknown = JSON.parse(
+					fs.readFileSync(manifestPath, "utf8"),
+				);
+				if (
+					manifest &&
+					typeof manifest === "object" &&
+					"packageManager" in manifest &&
+					typeof manifest.packageManager === "string"
+				) {
+					const declared = manifest.packageManager.split("@")[0];
+					if (
+						declared === "bun" ||
+						declared === "npm" ||
+						declared === "pnpm" ||
+						declared === "yarn"
+					)
+						return declared;
+				}
+			} catch (error) {
+				if (!(error instanceof SyntaxError)) throw error;
+			}
 		}
 		if (fs.existsSync(path.join(currentDir, "pnpm-lock.yaml"))) return "pnpm";
 		if (fs.existsSync(path.join(currentDir, "yarn.lock"))) return "yarn";

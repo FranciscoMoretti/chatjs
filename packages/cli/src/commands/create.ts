@@ -5,13 +5,13 @@ import { intro, outro } from "@clack/prompts";
 import { Command } from "commander";
 import { z } from "zod";
 import { toolDefinitionSchema } from "../../../registry/metadata";
-import { preflight } from "../utils/preflight";
 import { buildConfigTs } from "../helpers/config-builder";
 import { ensureTargetEmpty } from "../helpers/ensure-target";
 import {
 	collectEnvChecklist,
 	type EnvVarEntry,
 } from "../helpers/env-checklist";
+import { configureGatewayProvider } from "../helpers/gateway-provider";
 import {
 	promptAssistantTools,
 	promptAuth,
@@ -29,8 +29,6 @@ import {
 } from "../helpers/scaffold";
 import { storageEnvRequirements } from "../helpers/storage-provider";
 import { resolveGateway } from "../registry/gateways";
-import { configureGatewayProvider } from "../helpers/gateway-provider";
-import { syncTools } from "../utils/sync-tools";
 import {
 	installItems,
 	itemAddress,
@@ -41,8 +39,10 @@ import { launcherPackageManager } from "../utils/get-package-manager";
 import { handleError } from "../utils/handle-error";
 import { highlighter } from "../utils/highlighter";
 import { logger } from "../utils/logger";
+import { preflight } from "../utils/preflight";
 import { runCommand } from "../utils/run-command";
 import { spinner } from "../utils/spinner";
+import { syncTools } from "../utils/sync-tools";
 
 function resolveCreateTarget(targetArg: string | undefined): {
 	projectName: string;
@@ -319,9 +319,14 @@ export const create = new Command()
 				// custom clones. Generated registration indexes are excluded in Biome.
 				if (!options.fromGit) {
 					await runCommand(
-						"node",
+						packageManager,
 						[
-							join(targetDir, "node_modules/@biomejs/biome/bin/biome"),
+							...(packageManager === "npm"
+								? ["exec", "--"]
+								: packageManager === "pnpm"
+									? ["exec"]
+									: ["run"]),
+							"biome",
 							"check",
 							"--write",
 							"--linter-enabled=false",

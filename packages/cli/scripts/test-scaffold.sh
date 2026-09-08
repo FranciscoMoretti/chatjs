@@ -16,7 +16,12 @@ for attempt in {1..100}; do
   test -f "$gateway_archive_dir/address" && break
   sleep 0.1
 done
-export CHATJS_REGISTRY_URL="$(cat "$gateway_archive_dir/address")"
+if [ ! -s "$gateway_archive_dir/address" ]; then
+  echo "Registry server did not publish its address within 10 seconds." >&2
+  exit 1
+fi
+CHATJS_REGISTRY_URL="$(cat "$gateway_archive_dir/address")"
+export CHATJS_REGISTRY_URL
 
 
 run_case() (
