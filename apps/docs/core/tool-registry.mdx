@@ -1,122 +1,79 @@
 ---
-title: "Tool Registry"
-description: "Install and distribute ChatJS tools through the registry"
+title: Tool Registry
+description: Install and distribute typed ChatJS tools with shadcn registries
 ---
 
-The ChatJS tool registry is the distribution layer for installable tools. It lets you ship a tool's server logic, UI renderer, and supporting files as a portable package that another ChatJS app can install with `chatjs add`.
-
-This is the extension surface for ChatJS. Built-in product tools stay in `tools/platform`. Installable tools live in `tools/chatjs` and are managed by the CLI.
-
-## What You Install
-
-When you run `chatjs add`, the CLI:
-
-1. Fetches a registry item by name
-2. Resolves any registry dependencies that item depends on
-3. Writes the tool files into the installable tools directory from `chat.config.ts`
-4. Installs any npm dependencies declared by the registry item
-5. Warns if installed items declare missing environment variables
-6. Updates the CLI-managed registry files so the tool is available to the model and renderer
+The ChatJS registry distributes editable source code using shadcn. A tool includes
+server logic, a client renderer, dependencies, and a declarative registration
+descriptor. Installed tools become part of your app's typed tool system.
 
 ```bash
 npx @chat-js/cli@latest add word-count
 ```
 
-## Why This Exists
+shadcn resolves the item and its dependencies, installs packages, and writes the
+source files. ChatJS then regenerates separate server and client registrations.
+Existing source follows shadcn's overwrite prompts. Pass `--overwrite` to replace it.
 
-The registry gives ChatJS a standardized way to distribute software between projects.
+## Installed files
 
-- You can publish self-contained tools instead of copying app-specific code by hand.
-- Installed tools become part of the app's typed tool system automatically.
-- Each tool can ship both execution logic and a custom UI renderer.
-- Shared helpers can be distributed as registry dependencies and installed alongside the main tool.
+| File | Ownership |
+| --- | --- |
+| `tools/chatjs/<id>/tool.ts` | Editable server implementation |
+| `tools/chatjs/<id>/renderer.tsx` | Editable client renderer |
+| `tools/chatjs/<id>/chatjs.json` | Installed registration and environment descriptor |
+| `tools/chatjs/tools.ts`, `ui.ts` | Generated registrations |
+| `tools/chatjs/custom-tools.ts`, `custom-ui.ts` | Your custom registrations |
 
-If you have used `shadcn/ui`, the model is similar. The registry distributes source files into your project instead of mounting opaque runtime plugins.
+Keep manual registrations in the custom modules. Sync rejects duplicate installed
+descriptor keys and edited generated indexes. Generated indexes detect collisions
+with custom registrations when loaded. Sync also refuses to remove a previously registered tool
+just because its descriptor disappeared. Restore the descriptor before syncing.
+Known legacy built-in indexes migrate automatically. Customized legacy indexes
+need an explicit move into the custom modules before removing the old indexes.
 
-## Installed Tool Layout
+Registry items specify explicit file targets. This integration uses `tools/chatjs`.
+The former `paths.tools` configuration and marker-based injection are removed.
+Built-in product tools remain in `tools/platform`.
 
-By default, installed tools are written into `tools/chatjs`:
+## External registries
 
-```text
-tools/
-  chatjs/
-    tools.ts
-    ui.ts
-    word-count/
-      tool.ts
-      renderer.tsx
-    _shared/
-      hooks/
-      lib/
+Configure standard namespaces in `components.json`:
+
+```json
+{
+  "registries": {
+    "@chatjs": "https://unpkg.com/@chat-js/registry@1/dist/r/{name}.json",
+    "@acme": "https://example.com/r/{name}.json"
+  }
+}
 ```
-
-`tools/chatjs/tools.ts` and `tools/chatjs/ui.ts` are the CLI-managed registry files. You should not edit them manually.
-
-## Registry Boundaries
-
-ChatJS separates tools into two layers:
-
-| Location | Ownership | Purpose |
-| --- | --- | --- |
-| `tools/platform` | ChatJS platform | Built-in product tools and tightly coupled internal tooling |
-| `tools/chatjs` | Registry + app | Installable tools distributed through `chatjs add` |
-
-Use `tools/platform` when a tool depends on internal app contracts or product infrastructure.
-
-Use `tools/chatjs` when a tool should be portable across ChatJS projects as a distributable package.
-
-## Project Configuration
-
-The registry installs files into the path configured by `paths.tools` in `chat.config.ts`:
-
-```ts title="chat.config.ts"
-export default defineConfig({
-  paths: {
-    tools: "@/tools/chatjs",
-  },
-});
-```
-
-The CLI uses this path both to decide where files should be written and which import alias should be used inside the generated registry index.
-
-## Tool Environment Variables
-
-Installable tools can declare their own environment requirements directly in `tool.ts`.
-
-```ts title="tools/chatjs/retrieve-url/tool.ts"
-import type { ToolEnvVars } from "@chat-js/registry";
-
-export const toolEnvVars: ToolEnvVars = [
-  {
-    options: [["FIRECRAWL_API_KEY"]],
-  },
-];
-```
-
-The registry build extracts `toolEnvVars` into the generated registry manifest as `envRequirements`. `chatjs add` uses that metadata for install-time warnings, and `check-env` validates installed tools from their `tool.ts` source at app startup and build time.
-
-## Using a Different Registry
-
-You can point the CLI at a local or custom registry:
 
 ```bash
-npx @chat-js/cli@latest add word-count \
-  --registry ./packages/registry/items/{name}.json \
-  --cwd apps/chat
+npx @chat-js/cli@latest add @acme/my-tool
 ```
 
-You can also set a default registry URL template with `CHATJS_REGISTRY_URL`.
+You can also pass a complete registry item URL or local JSON path. Registry
+requests require HTTPS, with HTTP allowed for local loopback development.
+`--registry` has been replaced by standard namespace configuration.
 
-## Manual Update And Troubleshooting
+## Direct shadcn installation
 
-- Re-running `chatjs add` is safe. The CLI avoids duplicate registry entries.
-- Pass `--overwrite` if you want to replace existing installed files.
-- If `chat.config.ts` is missing, `chatjs add` will stop before making changes.
-- If an item declares shared registry dependencies, those are installed automatically before the main item is registered.
-- If the registry index does not exist yet, the CLI creates it for you.
+```bash
+npx shadcn@4.21.0 add @chatjs/word-count
+npx @chat-js/cli@latest sync
+```
+
+shadcn installs source. `sync` reads installed descriptors and generates ChatJS
+registrations without evaluating third-party source. `chat-js add` performs both
+steps. If registration fails after installation, fix the reported issue and run
+`sync` again. Package installation is not transactional.
+
+Tool environment requirements live in `chatjs.json`, generated from typed item
+metadata. `check-env` reads those descriptors without importing server tools.
 
 ## Related
 
-- [CLI add](../cli/add) for the command reference
-- [Adding Tools](../cookbook/add-tools) for how installation works under the hood
-- [Tools](../cookbook/tools) for authoring and publishing registry tools
+- [CLI add](../cli/add) for command options
+- [Adding Tools](../cookbook/add-tools) for the installation steps
+- [Tools](../cookbook/tools) for source authoring
