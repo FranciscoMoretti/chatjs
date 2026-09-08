@@ -53,6 +53,8 @@
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
-    "typescript": "6.0.2"
+    "typescript": "6.0.2",
+    "@types/node": "22.13.10",
+    "next": "16.3.0"
   }
 }
