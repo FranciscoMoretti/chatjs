@@ -40,7 +40,7 @@ export default defineConfig({
       handle: "@franmoretti_",
     },
     og: {
-      site: "chatjs.dev/docs",
+      site: "ChatJS",
       description:
         "Production-ready AI chat documentation for auth, streaming, tools, and deployment.",
     },

@@ -34,10 +34,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Install Chromium
         run: node_modules/.bin/playwright install --with-deps chromium
-      - name: Build docs
-        run: bun --filter=@chatjs/docs run build
       - name: Capture docs
         run: bun run test:visual:docs
       - name: Upload UI Verify build
         if: env.UIVERIFY_API_KEY != ''
-        run: bun run uiverify:docs
+        run: bun run uiverify:upload:docs

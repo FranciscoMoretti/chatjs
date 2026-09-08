@@ -41,7 +41,7 @@ fixed fixture — a table of props/mock-responses — in one story. Deterministi
 pixels out, many states, few shots.
 
 ```tsx
-const CASES = [
+const CASES: { label: string; items?: Item[]; error?: string }[] = [
   { label: 'empty',   items: [] },
   { label: 'one',     items: [fixtures.one] },
   { label: 'many',    items: fixtures.many },

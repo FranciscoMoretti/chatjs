@@ -11,7 +11,7 @@ questions:
     question: How do I create a new ChatJS app with the CLI?
     expected:
       - use the chat-js create command
-      - or bunx @chat-js/cli create
+      - run npx @chat-js/cli@latest create
     routes:
       - /quickstart
       - /cli/create

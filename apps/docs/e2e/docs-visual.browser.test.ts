@@ -21,15 +21,8 @@ for (const page of pages) {
 		frame.style.cssText = "border:0;display:block;height:100vh;width:100vw";
 		document.body.append(frame);
 
-		await new Promise<void>((resolve, reject) => {
+		await new Promise<void>((resolve) => {
 			frame.addEventListener("load", () => resolve(), { once: true });
-			frame.addEventListener(
-				"error",
-				() => reject(new Error(`Failed to load ${page.path}`)),
-				{
-					once: true,
-				},
-			);
 		});
 
 		const source = frame.contentDocument;

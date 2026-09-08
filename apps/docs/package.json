@@ -15,7 +15,7 @@
 		"docs:audit": "blume audit",
 		"docs:eval": "blume eval",
 		"lint": "blume doctor",
-		"test:visual": "vitest run --config vitest.config.ts"
+		"test:visual": "blume build && vitest run --config vitest.config.ts"
 	},
 	"devDependencies": {
 		"blume": "^1.6.3"

@@ -93,9 +93,9 @@ If a page is a server component that fetches, render its **client presentational
 props instead of the fetching wrapper — a browser-mode test has no server to run the fetch anyway. MSW in
 a setup file also works for `fetch`-based components; the rule is only *no real request*.
 
-**Copy the dogfood — it's the reference implementation.** `apps/web/src/components/marketing/*.visual.test.tsx`
-are real `@uiverify/vitest` tests with this exact shape: `render(<Page/>)` →
-`await expect.element(...).toBeVisible()` → `await takeSnapshot()`, all data static.
+**Copy the dogfood — it's the reference implementation.**
+`apps/docs/e2e/docs-visual.browser.test.ts` is the in-repo example: call
+`takeSnapshot('name')` after the page settles, with static content.
 
 **One canvas per component, not N stories.** Render every variant × state of a component (a Button's
 sizes/states, every tile kind) in a **single grid** and take **one** snapshot — cheaper (one screenshot),
