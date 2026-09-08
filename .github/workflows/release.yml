@@ -75,40 +75,39 @@ jobs:
             local lookup
             if lookup="$(npm view "${name}@${version}" version --json)"; then
               echo "${tag} already on npm"
-              return 0
-            fi
+            else
+              # Only a genuine missing version should trigger publication.
+              if ! printf '%s' "$lookup" | node -e '
+                let input = "";
+                process.stdin.on("data", chunk => input += chunk);
+                process.stdin.on("end", () => {
+                  try { process.exit(JSON.parse(input).error?.code === "E404" ? 0 : 1); }
+                  catch { process.exit(1); }
+                });
+              '; then
+                echo "::error::Could not query npm for ${tag}; refusing to treat a registry/authentication failure as a missing version."
+                return 1
+              fi
 
-            # Only a genuine missing version should trigger publication.
-            if ! printf '%s' "$lookup" | node -e '
-              let input = "";
-              process.stdin.on("data", chunk => input += chunk);
-              process.stdin.on("end", () => {
-                try { process.exit(JSON.parse(input).error?.code === "E404" ? 0 : 1); }
-                catch { process.exit(1); }
-              });
-            '; then
-              echo "::error::Could not query npm for ${tag}; refusing to treat a registry/authentication failure as a missing version."
-              return 1
-            fi
+              echo "Publishing ${tag} (first publish cannot use OIDC)"
+              bun --filter "${name}" build
+              if ! npm publish --workspace "${name}" --access public --no-provenance; then
+                echo "::error::Could not publish ${tag}. Create it once locally with 2FA (npm publish --access public --no-provenance in ${workspace_dir}), then add GitHub Actions as a trusted publisher on npmjs.com."
+                return 1
+              fi
 
-            echo "Publishing ${tag} (first publish cannot use OIDC)"
-            bun --filter "${name}" build
-            if ! npm publish --workspace "${name}" --access public --no-provenance; then
-              echo "::error::Could not publish ${tag}. Create it once locally with 2FA (npm publish --access public --no-provenance in ${workspace_dir}), then add GitHub Actions as a trusted publisher on npmjs.com."
-              return 1
-            fi
-
-            if [ "$(npm view "${tag}" version)" != "$version" ]; then
-              echo "::error::Published version ${tag} could not be verified on npm."
-              return 1
+              if [ "$(npm view "${tag}" version)" != "$version" ]; then
+                echo "::error::Published version ${tag} could not be verified on npm."
+                return 1
+              fi
             fi
 
             if git rev-parse "${tag}" >/dev/null 2>&1; then
               echo "tag ${tag} already exists"
             else
               git tag "${tag}"
-              git push origin "${tag}"
             fi
+            git push origin "${tag}"
 
             if gh release view "${tag}" >/dev/null 2>&1; then
               echo "GitHub release ${tag} already exists"
