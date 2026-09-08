@@ -14,11 +14,19 @@ move between branches while responses continue streaming.
 ## Install
 
 ```bash
-bun add @chat-js/thread ai @ai-sdk/react react
+bun add @chat-js/thread ai@^7.0.93 @ai-sdk/react@^4.0.96 react
 ```
 
-Replace the `useChat` import without changing your existing message list or
-composer:
+You need Node.js 22 or later and AI SDK 7. The React adapter requires
+`@ai-sdk/react ^4.0.96` and React 18 or later. The repository tests use React
+19.2.3. AI SDK 6 applications must upgrade their SDK and provider packages
+before using this version.
+
+The headless `@chat-js/thread` entry point needs only `ai`. React applications
+import the hook from `@chat-js/thread/react`.
+
+For a compatible AI SDK application, replace the `useChat` import while keeping
+your existing message list and composer:
 
 ```diff
 - import { useChat } from "@ai-sdk/react";
@@ -30,6 +38,11 @@ composer:
 
 The top-level helpers remain compatible with `UseChatHelpers`, including
 `messages`, `sendMessage`, `regenerate`, `stop`, `status`, tools, and approvals.
+
+The hook manages client state. Your application still supplies the AI SDK
+transport, server endpoint, authentication, storage and branch controls.
+See the [existing-app recipe](../cookbook/threaded-chat) for a complete client
+and server example.
 
 ## Mental model
 
@@ -154,5 +167,17 @@ const chat = useThread({
 The snapshot is `{ version: 1, cursorId, nodes }`. Runtime indexes, active
 requests, and run adapters are not persisted.
 
-The package README documents the complete interface, transport metadata, and
-`Thread` exports.
+Restoring the tree does not restart every response. `resume: true` or
+`resumeStream()` reconnects the selected assistant through your transport's
+reconnect endpoint. Active request objects and run IDs are not durable jobs.
+Your server must retain a resumable stream and route it to the correct
+conversation and assistant. `tree.resumeRun(runId)` addresses a run that still
+exists in the live controller.
+
+The hook owns its default controller for its component lifetime. To keep
+responses running across component unmounts, retain a controller in your
+application runtime and pass `useThread({ thread })`. Do not share a
+server-side controller between users.
+
+See the [package README](https://github.com/FranciscoMoretti/chat-js/tree/main/packages/thread)
+for the external state contract and full interface.

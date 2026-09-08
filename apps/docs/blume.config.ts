@@ -154,6 +154,7 @@ export default defineConfig({
           root: "/cookbook",
           items: [
             "/cookbook",
+            "/cookbook/threaded-chat",
             "/cookbook/resumable-streams",
             "/cookbook/stop-resumable-streams",
             "/cookbook/tool-part",
