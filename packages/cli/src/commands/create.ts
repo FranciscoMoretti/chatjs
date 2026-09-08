@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { basename, join, relative, resolve } from "node:path";
 import { intro, outro } from "@clack/prompts";
@@ -234,6 +235,13 @@ export const create = new Command()
 						storage,
 						gateway: gatewaySelection,
 					});
+					if (!existsSync(join(targetDir, "lib/ai/gateway.ts"))) {
+						scaffoldSpinner.succeed("Repository cloned.");
+						logger.warn(
+							"This repository has no ChatJS gateway slot. Skipping ChatJS configuration and installation.",
+						);
+						return;
+					}
 				} else {
 					await scaffoldFromTemplate(targetDir, {
 						packageManager,

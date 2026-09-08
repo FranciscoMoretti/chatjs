@@ -113,3 +113,45 @@ describe("create command", () => {
     expect(provider).toContain('from "files-sdk/vercel-blob"');
   });
 });
+
+it("leaves non-ChatJS Git templates unconfigured through the full create command", async () => {
+	const { writeFile } = await import("node:fs/promises");
+	const source = makeTempDir("plain-source");
+	const destination = makeTempDir("plain-clone");
+	await mkdir(source, { recursive: true });
+	const manifest = JSON.stringify({ name: "plain-app", dependencies: {} });
+	await writeFile(join(source, "package.json"), manifest);
+	for (const args of [
+		["init"],
+		["add", "."],
+		[
+			"-c",
+			"user.name=ChatJS Test",
+			"-c",
+			"user.email=test@chatjs.dev",
+			"commit",
+			"-m",
+			"initial",
+		],
+	]) {
+		expect(Bun.spawnSync(["git", ...args], { cwd: source }).exitCode).toBe(0);
+	}
+	await create.parseAsync(
+		[
+			destination,
+			"--from-git",
+			source,
+			"--gateway",
+			"vercel",
+			"--yes",
+			"--no-install",
+		],
+		{ from: "user" },
+	);
+	expect(await Bun.file(join(destination, "chat.config.ts")).exists()).toBe(
+		false,
+	);
+	expect(await readFile(join(destination, "package.json"), "utf8")).toBe(
+		manifest,
+	);
+});

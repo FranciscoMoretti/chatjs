@@ -81,7 +81,9 @@ export async function resolveGateway(
 	const location = address(source);
 	const selected = await visit(location);
 	const definition = selected.meta?.chatjs;
-	if (selected.type !== "registry:item" || !definition)
+	if (selected.type !== "registry:item")
+		throw new Error("Selected gateway root must have type registry:item.");
+	if (!definition)
 		throw new Error(
 			"Selected registry item must declare meta.chatjs with a version 1 gateway contract.",
 		);

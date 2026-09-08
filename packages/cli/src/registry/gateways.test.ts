@@ -11,6 +11,8 @@ it("requires secure remote transport for roots, dependencies and redirects", asy
 		hostname: "127.0.0.1",
 		fetch(request) {
 			const path = new URL(request.url).pathname;
+			if (path === "/loopback-redirect.json")
+				return Response.redirect(new URL("/item.json", request.url));
 			if (path === "/redirect.json")
 				return Response.redirect("http://example.com/item.json");
 			if (path === "/dependencies.json")
@@ -28,6 +30,9 @@ it("requires secure remote transport for roots, dependencies and redirects", asy
 		expect((await resolveGateway(`${base}/item.json`)).definition.id).toBe(
 			"vercel",
 		);
+		await expect(
+			resolveGateway(`${base}/loopback-redirect.json`),
+		).rejects.toThrow("HTTPS");
 		await expect(resolveGateway(`${base}/redirect.json`)).rejects.toThrow(
 			"HTTPS",
 		);
@@ -35,7 +40,7 @@ it("requires secure remote transport for roots, dependencies and redirects", asy
 			"HTTPS",
 		);
 		await expect(resolveGateway(`${base}/invalid.json`)).rejects.toThrow(
-			"Selected registry item",
+			"type registry:item",
 		);
 	} finally {
 		server.stop(true);

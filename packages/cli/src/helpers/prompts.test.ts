@@ -52,3 +52,12 @@ it("rejects a default for media the gateway cannot support", () => {
 	definition.defaults.tools.image = { enabled: false, default: "unsupported" };
 	expect(gatewayDefinitionSchema.safeParse(definition).success).toBe(false);
 });
+
+it("enables web search when external defaults enable deep research", async () => {
+	const definition = externalGatewayFixture().root.meta.chatjs;
+	definition.defaults.tools.webSearch.enabled = false;
+	definition.defaults.tools.deepResearch.enabled = true;
+	const { builtInTools } = await promptAssistantTools([], true, definition);
+	expect(builtInTools.deepResearch).toBe(true);
+	expect(builtInTools.webSearch).toBe(true);
+});

@@ -327,7 +327,8 @@ export async function promptAssistantTools(
 }> {
 	const defaultTools = gateway.defaults.tools;
 	const BUILT_IN_TOOL_DEFAULTS: Record<BuiltInToolKey, boolean> = {
-		webSearch: defaultTools.webSearch.enabled,
+		webSearch:
+			defaultTools.webSearch.enabled || defaultTools.deepResearch.enabled,
 		urlRetrieval: defaultTools.urlRetrieval.enabled,
 		deepResearch: defaultTools.deepResearch.enabled,
 		codeExecution: defaultTools.codeExecution.enabled,

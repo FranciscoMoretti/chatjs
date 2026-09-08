@@ -25,6 +25,9 @@ export async function configureGatewayProvider(
 	destination: string,
 	input: string | GatewaySelection,
 ): Promise<void> {
+	const root = await lstat(destination);
+	if (root.isSymbolicLink() || !root.isDirectory())
+		throw new Error("Gateway destination must be a directory, not a symlink.");
 	const selection =
 		typeof input === "string" ? await resolveGateway(input) : input;
 	const files = new Map<string, string>();

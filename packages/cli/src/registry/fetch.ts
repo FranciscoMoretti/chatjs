@@ -70,6 +70,7 @@ export async function fetchJson(
 			if (
 				parsed.protocol !== "https:" &&
 				!(
+					redirects === 0 &&
 					parsed.protocol === "http:" &&
 					["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname)
 				)

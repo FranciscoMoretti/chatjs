@@ -173,3 +173,20 @@ it("rejects symlinked fixed outputs and missing snapshots before modifying the a
 	await expect(configureGatewayProvider(directory, "openai")).rejects.toThrow();
 	expect(await readFile(gateway, "utf8")).toBe(original);
 });
+
+it("rejects a symlinked app root without modifying its target", async () => {
+	const { symlink } = await import("node:fs/promises");
+	const parent = await mkdtemp(join(tmpdir(), "chatjs-root-link-"));
+	directories.push(parent);
+	const app = join(parent, "app");
+	await scaffoldFromTemplate(app);
+	const { ensureTargetEmpty } = await import("./ensure-target");
+	const alias = join(parent, "alias");
+	await symlink(app, alias);
+	await expect(ensureTargetEmpty(alias)).rejects.toThrow("symlink");
+	const original = await readFile(join(app, "lib/ai/gateway.ts"), "utf8");
+	await expect(configureGatewayProvider(alias, "openai")).rejects.toThrow(
+		"symlink",
+	);
+	expect(await readFile(join(app, "lib/ai/gateway.ts"), "utf8")).toBe(original);
+});
