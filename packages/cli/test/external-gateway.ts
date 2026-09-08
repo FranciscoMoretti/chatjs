@@ -9,7 +9,7 @@ export function externalGatewayFixture() {
 		)!,
 	);
 	const adapter = readFileSync(
-		new URL("../../registry/gateways/openai-compatible.ts", import.meta.url),
+		new URL("../../registry/src/gateways/openai-compatible/gateway.ts", import.meta.url),
 		"utf8",
 	)
 		.replaceAll('"openai-compatible"', '"acme"')

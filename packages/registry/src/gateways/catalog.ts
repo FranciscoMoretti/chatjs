@@ -27,7 +27,7 @@ export const builtInGateways = Object.entries(gatewayMetadata).map(
       ],
       files: [
         {
-          path: `gateways/${id}.ts`,
+          path: `src/gateways/${id}/gateway.ts`,
           type: "registry:file" as const,
           target: "~/lib/ai/gateway.ts",
         },

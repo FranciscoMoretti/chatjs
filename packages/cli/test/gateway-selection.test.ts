@@ -11,7 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { gatewayMetadata } from "../../registry/gateways/metadata";
+import { gatewayMetadata } from "../../registry/src/gateways/metadata";
 import cliPackage from "../package.json";
 import gatewayPackage from "@chat-js/gateways/package.json";
 import { externalGatewayFixture } from "./external-gateway";

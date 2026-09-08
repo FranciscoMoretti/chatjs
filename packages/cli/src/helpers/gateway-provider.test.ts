@@ -2,7 +2,7 @@ import { expect, it } from "bun:test";
 import { mkdtemp, rm, readFile, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { builtInGateways } from "../../../registry/gateways/catalog";
+import { builtInGateways } from "../../../registry/src/gateways/catalog";
 import { scaffoldFromTemplate } from "./scaffold";
 import { configureGatewayProvider } from "./gateway-provider";
 it("wires selected defaults and snapshot identity without managing dependencies", async () => {

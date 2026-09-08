@@ -131,7 +131,6 @@
         "!$TURBO_ROOT$/apps/{chat,electron}/**/{.env,.env.*.local,.env.local,.DS_Store,*.tsbuildinfo,bun.lock,bun.lockb}",
         "!$TURBO_ROOT$/apps/electron/branding.json",
         "$TURBO_ROOT$/packages/registry/{registry.ts,metadata.ts,package.json}",
-        "$TURBO_ROOT$/packages/registry/gateways/**",
         "$TURBO_ROOT$/packages/registry/src/**",
         "$TURBO_ROOT$/packages/registry/build.ts"
       ],
@@ -159,7 +158,6 @@
         "!$TURBO_ROOT$/apps/{chat,electron}/**/{.env,.env.*.local,.env.local,.DS_Store,*.tsbuildinfo,bun.lock,bun.lockb}",
         "!$TURBO_ROOT$/apps/electron/branding.json",
         "$TURBO_ROOT$/packages/registry/{registry.ts,metadata.ts,package.json}",
-        "$TURBO_ROOT$/packages/registry/gateways/**",
         "$TURBO_ROOT$/packages/registry/src/**",
         "$TURBO_ROOT$/packages/registry/build.ts"
       ]
@@ -213,7 +211,6 @@
         "!$TURBO_ROOT$/apps/{chat,electron}/**/{.env,.env.*.local,.env.local,.DS_Store,*.tsbuildinfo,bun.lock,bun.lockb}",
         "!$TURBO_ROOT$/apps/electron/branding.json",
         "$TURBO_ROOT$/packages/registry/{registry.ts,metadata.ts,package.json}",
-        "$TURBO_ROOT$/packages/registry/gateways/**",
         "$TURBO_ROOT$/packages/registry/src/**",
         "$TURBO_ROOT$/packages/registry/build.ts"
       ]
