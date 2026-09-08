@@ -27,7 +27,10 @@ it("retains HTTPS enforcement for shadcn requests and redirects", async () => {
 	const server = Bun.serve({
 		port: 0,
 		hostname: "127.0.0.1",
-		fetch: (request) => Response.redirect(new URL("/target.json", request.url)),
+		fetch: (request) =>
+			new URL(request.url).pathname === "/gateway.json"
+				? Response.redirect(new URL("/target.json", request.url))
+				: Response.json(builtInGateways[0]),
 	});
 	try {
 		await expect(

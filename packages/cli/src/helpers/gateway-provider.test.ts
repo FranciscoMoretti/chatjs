@@ -9,6 +9,7 @@ it("wires selected defaults and snapshot identity without managing dependencies"
 	const cwd = await mkdtemp(join(tmpdir(), "chatjs-wiring-"));
 	try {
 		await scaffoldFromTemplate(cwd);
+		await rm(join(cwd, "lib/ai/models.generated.ts"));
 		const manifest = await readFile(join(cwd, "package.json"), "utf8");
 		for (const item of builtInGateways) {
 			await configureGatewayProvider(cwd, {

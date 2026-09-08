@@ -1,6 +1,6 @@
 ---
 "@chat-js/registry": major
-"@chat-js/cli": minor
+"@chat-js/cli": major
 ---
 
 Build standard registry JSON from tested TypeScript sources using shadcn. Use

@@ -14,7 +14,10 @@ export async function configureGatewayProvider(
 		".env.example",
 	]);
 	const snapshotPath = join(destination, "lib/ai/models.generated.ts");
-	const snapshot = await readFile(snapshotPath, "utf8");
+	const snapshot = await readFile(snapshotPath, "utf8").catch((error) => {
+		if (error.code === "ENOENT") return "";
+		throw error;
+	});
 	const example = join(destination, ".env.example");
 	let env = await readFile(example, "utf8").catch((error) => {
 		if (error.code === "ENOENT") return "";

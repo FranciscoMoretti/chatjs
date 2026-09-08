@@ -12,6 +12,7 @@ import {
 } from "./scaffold";
 
 const tempDirs: string[] = [];
+const originalUserAgent = process.env.npm_config_user_agent;
 
 async function makeTempDir(name: string): Promise<string> {
 	const dir = join(tmpdir(), `chat-js-cli-${name}-${crypto.randomUUID()}`);
@@ -24,6 +25,8 @@ function getCliPackageRoot(): string {
 }
 
 afterEach(async () => {
+	if (originalUserAgent === undefined) delete process.env.npm_config_user_agent;
+	else process.env.npm_config_user_agent = originalUserAgent;
 	await Promise.all(
 		tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })),
 	);
@@ -235,7 +238,7 @@ describe("scaffoldFromTemplate", () => {
 			scripts: Record<string, string>;
 		};
 
-		expect(packageJson.packageManager).toMatch(/^(npm|pnpm)@/);
+		expect(packageJson.packageManager).toMatch(/^npm@\d+\.\d+\.\d+/);
 		for (const script of Object.values(packageJson.scripts)) {
 			expect(script).not.toContain("bun ");
 			expect(script).not.toContain("bunx");
@@ -262,6 +265,7 @@ describe("scaffoldFromTemplate", () => {
 	});
 
 	it("allows known native package build scripts for pnpm scaffolds", async () => {
+		process.env.npm_config_user_agent = "pnpm/10.33.1";
 		const destination = await makeTempDir("chat-app-pnpm");
 
 		await scaffoldFromTemplate(destination, { packageManager: "pnpm" });
@@ -276,7 +280,7 @@ describe("scaffoldFromTemplate", () => {
 			"utf8",
 		);
 
-		expect(packageJson.packageManager).toMatch(/^(npm|pnpm)@/);
+		expect(packageJson.packageManager).toBe("pnpm@10.33.1");
 		expect(workspaceConfig).toContain("onlyBuiltDependencies:");
 		expect(workspaceConfig).toContain("allowBuilds:");
 		expect(workspaceConfig).toContain("better-sqlite3: true");
@@ -403,7 +407,7 @@ describe("scaffoldElectron", () => {
 			pnpm?: unknown;
 		};
 
-		expect(packageJson.packageManager).toMatch(/^(npm|pnpm)@/);
+		expect(packageJson.packageManager).toMatch(/^npm@\d+\.\d+\.\d+/);
 		expect(packageJson.pnpm).toBeUndefined();
 		expect(packageJson.devDependencies["@better-auth/electron"]).toBe("1.5.6");
 		expect(packageJson.devDependencies["better-auth"]).toBe("1.5.6");
@@ -433,6 +437,7 @@ describe("scaffoldElectron", () => {
 	});
 
 	it("allows Electron install/build scripts for pnpm scaffolds", async () => {
+		process.env.npm_config_user_agent = "pnpm/10.33.1";
 		const projectDir = await makeTempDir("electron-pnpm");
 
 		await scaffoldFromTemplate(projectDir, { packageManager: "pnpm" });
