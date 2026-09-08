@@ -3,7 +3,8 @@
   "compilerOptions": {
     "types": [
       "bun",
-      "node"
+      "node",
+      "next"
     ],
     "allowImportingTsExtensions": true,
     "paths": {
@@ -15,7 +16,6 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    "../../apps/chat/next-env.d.ts",
     "../../apps/chat/types/**/*.d.ts",
     "../../apps/chat/electron.d.ts"
   ],

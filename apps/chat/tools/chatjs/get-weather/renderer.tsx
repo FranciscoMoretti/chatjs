@@ -189,13 +189,17 @@ function WeatherCard({
   const currentTimeIndex = weatherAtLocation.hourly.time.findIndex(
     (time) => new Date(time) >= new Date(weatherAtLocation.current.time)
   );
+  const displayStartIndex =
+    currentTimeIndex === -1
+      ? Math.max(0, weatherAtLocation.hourly.time.length - hoursToShow)
+      : currentTimeIndex;
   const displayTimes = weatherAtLocation.hourly.time.slice(
-    currentTimeIndex,
-    currentTimeIndex + hoursToShow
+    displayStartIndex,
+    displayStartIndex + hoursToShow
   );
   const displayTemperatures = weatherAtLocation.hourly.temperature_2m.slice(
-    currentTimeIndex,
-    currentTimeIndex + hoursToShow
+    displayStartIndex,
+    displayStartIndex + hoursToShow
   );
 
   return (
