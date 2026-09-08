@@ -26,8 +26,8 @@
     "files-sdk": "2.1.0",
     "kleur": "^4.1.5",
     "ora": "^8.2.0",
-    "zod": "^4.3.6",
-    "shadcn": "4.21.0"
+    "shadcn": "4.21.0",
+    "zod": "^4.3.6"
   },
   "bin": {
     "chat-js": "./dist/index.js"
@@ -47,10 +47,12 @@
     "template:sync": "bun ../../scripts/sync-template.ts",
     "prepublishOnly": "bun run build && node ./dist/index.js --help >/dev/null",
     "test:scaffold": "bash scripts/test-scaffold.sh",
-    "test:gateways": "bun run template:sync && bun test --timeout 180000 ./test/gateway-selection.test.ts"
+    "test:gateways": "bun run template:sync && bun test --timeout 180000 ./test/gateway-selection.test.ts",
+    "test:types": "tsc --noEmit"
   },
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "typescript": "6.0.2"
   }
 }

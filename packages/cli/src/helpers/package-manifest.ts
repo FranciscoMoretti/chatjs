@@ -1,3 +1,5 @@
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
 import type { PackageManager } from "../types";
 
 type DependencyMap = Record<string, string>;
@@ -45,7 +47,7 @@ function resolveBetterAuthVersion(packageJson: PackageJson): string | null {
 
 function pinBetterAuthVersions(
   dependencyGroup: DependencyMap | undefined,
-  version: string
+  version: string,
 ): void {
   if (!dependencyGroup) {
     return;
@@ -119,7 +121,7 @@ function normalizeElectronScripts(scripts: ScriptMap): void {
 
 function normalizeElectronDevDependencies(
   devDependencies: DependencyMap | undefined,
-  tsxVersion?: string
+  tsxVersion?: string,
 ): void {
   if (!devDependencies) {
     return;
@@ -138,7 +140,7 @@ export function normalizeScaffoldedPackageJson(
     persistPackageManager?: boolean;
     template?: "chat-app" | "electron";
     tsxVersion?: string;
-  }
+  },
 ): PackageJson {
   const betterAuthVersion = resolveBetterAuthVersion(packageJson);
 
@@ -164,7 +166,7 @@ export function normalizeScaffoldedPackageJson(
       }
       normalizeElectronDevDependencies(
         packageJson.devDependencies,
-        options?.tsxVersion
+        options?.tsxVersion,
       );
       break;
     default:
@@ -173,9 +175,18 @@ export function normalizeScaffoldedPackageJson(
 
   if (options?.persistPackageManager !== false) {
     const packageManager = options?.packageManager ?? "bun";
-    if (packageManager !== "bun") {
-      delete packageJson.packageManager;
-    }
+    const launcherVersion = process.env.npm_config_user_agent?.match(
+      new RegExp(`^${packageManager}/([0-9]+\\.[0-9]+\\.[0-9]+)`),
+    )?.[1];
+    const version =
+      launcherVersion ??
+      execFileSync(packageManager, ["--version"], {
+        cwd: tmpdir(),
+        encoding: "utf8",
+      }).trim();
+    if (!/^\d+\.\d+\.\d+/.test(version))
+      throw new Error(`Cannot determine ${packageManager} version.`);
+    packageJson.packageManager = `${packageManager}@${version}`;
   }
 
   return packageJson;

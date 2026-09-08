@@ -98,7 +98,7 @@ export class OpenAIGateway
       if (!response.ok) {
         this.log.error(
           { status: response.status, statusText: response.statusText, url },
-          "OpenAI returned non-OK response",
+          "OpenAI returned non-OK response"
         );
         throw new Error(`Failed to fetch models: ${response.statusText}`);
       }
@@ -109,15 +109,17 @@ export class OpenAIGateway
 
       this.log.info(
         { modelCount: result.length },
-        "Successfully fetched models from OpenAI",
+        "Successfully fetched models from OpenAI"
       );
       return result;
     } catch (error) {
       this.log.error(
         { err: error, url },
-        "Error fetching models from OpenAI, falling back to generated models",
+        "Error fetching models from OpenAI, falling back to generated models"
       );
       return [...this.getFallbackModels(this.type)];
     }
   }
 }
+
+export { OpenAIGateway as Gateway };

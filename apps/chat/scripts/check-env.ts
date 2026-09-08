@@ -9,8 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config as loadEnvConfig } from "dotenv";
 import { getProvider } from "files-sdk/providers";
-// biome-ignore lint/performance/noNamespaceImport: TypeScript API requires namespace import due to extensive usage
-import * as ts from "typescript";
+import { z } from "zod";
 import { gatewayEnvRequirements } from "../lib/ai/gateway-model-defaults";
 import { generatedForGateway } from "../lib/ai/models.generated";
 import { config } from "../lib/config";
@@ -35,179 +34,20 @@ interface ValidationError {
   missing: string[];
 }
 
-type StaticToolEnvVar = {
-  description?: string;
-  options: string[][];
-};
-
-type StaticToolEnvVars = StaticToolEnvVar[];
-
-type StaticToolMetadata = {
-  toolEnvVars: StaticToolEnvVars;
-};
-
 const projectRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   ".."
 );
-
-function unwrapExpression(node: ts.Expression): ts.Expression {
-  if (ts.isAsExpression(node) || ts.isSatisfiesExpression(node)) {
-    return unwrapExpression(node.expression);
-  }
-  return node;
-}
-
-function readString(node: ts.Expression): string | null {
-  const expr = unwrapExpression(node);
-  if (ts.isStringLiteral(expr) || ts.isNoSubstitutionTemplateLiteral(expr)) {
-    return expr.text;
-  }
-  return null;
-}
-
-function readStringArray(node: ts.Expression): string[] | null {
-  const expr = unwrapExpression(node);
-  if (!ts.isArrayLiteralExpression(expr)) {
-    return null;
-  }
-
-  const values: string[] = [];
-  for (const element of expr.elements) {
-    if (!ts.isExpression(element)) {
-      return null;
-    }
-    const value = readString(element);
-    if (value === null) {
-      return null;
-    }
-    values.push(value);
-  }
-
-  return values;
-}
-
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: AST traversal logic is inherently complex
-function readToolEnvVar(node: ts.Expression): StaticToolEnvVar | null {
-  const expr = unwrapExpression(node);
-  if (!ts.isObjectLiteralExpression(expr)) {
-    return null;
-  }
-
-  let description: string | null = null;
-  let options: string[][] | null = null;
-
-  for (const property of expr.properties) {
-    if (!ts.isPropertyAssignment(property)) {
-      return null;
-    }
-
-    const nameNode = property.name;
-    const name =
-      ts.isIdentifier(nameNode) || ts.isStringLiteral(nameNode)
-        ? nameNode.text
-        : null;
-
-    if (name === "description") {
-      description = readString(property.initializer);
-    } else if (name === "options") {
-      const outer = unwrapExpression(property.initializer);
-      if (!ts.isArrayLiteralExpression(outer)) {
-        return null;
-      }
-
-      const groups: string[][] = [];
-      for (const element of outer.elements) {
-        if (!ts.isExpression(element)) {
-          return null;
-        }
-        const group = readStringArray(element);
-        if (group === null) {
-          return null;
-        }
-        groups.push(group);
-      }
-      options = groups;
-    }
-  }
-
-  return options ? { ...(description ? { description } : {}), options } : null;
-}
-
-function readToolEnvVars(node: ts.Expression): StaticToolEnvVars {
-  const expr = unwrapExpression(node);
-  if (!ts.isArrayLiteralExpression(expr)) {
-    return [];
-  }
-
-  const toolEnvVars: StaticToolEnvVars = [];
-  for (const element of expr.elements) {
-    if (!ts.isExpression(element)) {
-      return [];
-    }
-    const toolEnvVar = readToolEnvVar(element);
-    if (!toolEnvVar) {
-      return [];
-    }
-    toolEnvVars.push(toolEnvVar);
-  }
-
-  return toolEnvVars;
-}
-
-function readStaticToolMetadata(sourceText: string): StaticToolMetadata {
-  const sourceFile = ts.createSourceFile(
-    "tool.ts",
-    sourceText,
-    ts.ScriptTarget.ESNext,
-    true,
-    ts.ScriptKind.TS
-  );
-  const toolEnvVars: StaticToolEnvVars = [];
-
-  function visit(node: ts.Node): void {
-    if (
-      ts.isVariableStatement(node) &&
-      node.modifiers?.some(
-        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword
-      )
-    ) {
-      for (const declaration of node.declarationList.declarations) {
-        if (declaration.name.getText() !== "toolEnvVars") {
-          continue;
-        }
-        const initializer = declaration.initializer;
-        if (initializer && ts.isExpression(initializer)) {
-          toolEnvVars.push(...readToolEnvVars(initializer));
-        }
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  }
-
-  visit(sourceFile);
-
-  return {
-    toolEnvVars,
-  };
-}
-
-function resolveToolsDir(toolsPath: string): string {
-  if (toolsPath.startsWith("@/")) {
-    return path.resolve(projectRoot, toolsPath.slice(2));
-  }
-
-  if (toolsPath.startsWith("./") || toolsPath.startsWith("../")) {
-    return path.resolve(projectRoot, toolsPath);
-  }
-
-  if (path.isAbsolute(toolsPath)) {
-    return toolsPath;
-  }
-
-  return path.resolve(projectRoot, toolsPath);
-}
+const toolEnvironmentSchema = z.object({
+  envRequirements: z
+    .array(
+      z.object({
+        description: z.string().optional(),
+        options: z.array(z.array(z.string()).min(1)).min(1),
+      })
+    )
+    .default([]),
+});
 
 function validateGatewayKey(env: NodeJS.ProcessEnv): ValidationError | null {
   const gateway: string = config.ai.gateway;
@@ -346,7 +186,7 @@ function validateAuthentication(env: NodeJS.ProcessEnv): ValidationError[] {
 async function validateInstalledTools(
   env: NodeJS.ProcessEnv
 ): Promise<ValidationError[]> {
-  const toolsDir = resolveToolsDir(config.paths.tools);
+  const toolsDir = path.join(projectRoot, "tools/chatjs");
   const entries = await fs
     .readdir(toolsDir, { withFileTypes: true })
     .catch((error: NodeJS.ErrnoException) => {
@@ -362,7 +202,7 @@ async function validateInstalledTools(
       continue;
     }
 
-    const toolPath = path.join(toolsDir, entry.name, "tool.ts");
+    const toolPath = path.join(toolsDir, entry.name, "chatjs.json");
     const exists = await fs
       .access(toolPath)
       .then(() => true)
@@ -373,9 +213,9 @@ async function validateInstalledTools(
     }
 
     const toolSource = await fs.readFile(toolPath, "utf8");
-    const mod = readStaticToolMetadata(toolSource);
+    const mod = toolEnvironmentSchema.parse(JSON.parse(toolSource));
 
-    for (const toolEnvVar of mod.toolEnvVars) {
+    for (const toolEnvVar of mod.envRequirements) {
       const missing = getMissingRequirement(toolEnvVar, env);
       if (missing) {
         errors.push({

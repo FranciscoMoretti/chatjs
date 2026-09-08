@@ -16,7 +16,7 @@ interface OpenAICompatibleModelResponse {
 }
 
 function toAiGatewayModel(
-  model: OpenAICompatibleModelResponse,
+  model: OpenAICompatibleModelResponse
 ): AiGatewayModel {
   return {
     id: model.id,
@@ -79,7 +79,7 @@ export class OpenAICompatibleGateway
 
     if (!baseURL) {
       this.log.warn(
-        "No OPENAI_COMPATIBLE_BASE_URL found, using fallback models",
+        "No OPENAI_COMPATIBLE_BASE_URL found, using fallback models"
       );
       return [...this.getFallbackModels(this.type)];
     }
@@ -102,7 +102,7 @@ export class OpenAICompatibleGateway
       if (!response.ok) {
         this.log.error(
           { status: response.status, statusText: response.statusText, url },
-          "OpenAI-compatible provider returned non-OK response",
+          "OpenAI-compatible provider returned non-OK response"
         );
         throw new Error(`Failed to fetch models: ${response.statusText}`);
       }
@@ -113,15 +113,17 @@ export class OpenAICompatibleGateway
 
       this.log.info(
         { modelCount: result.length },
-        "Successfully fetched models from OpenAI-compatible provider",
+        "Successfully fetched models from OpenAI-compatible provider"
       );
       return result;
     } catch (error) {
       this.log.error(
         { err: error, url },
-        "Error fetching models from OpenAI-compatible provider, falling back to generated models",
+        "Error fetching models from OpenAI-compatible provider, falling back to generated models"
       );
       return [...this.getFallbackModels(this.type)];
     }
   }
 }
+
+export { OpenAICompatibleGateway as Gateway };

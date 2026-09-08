@@ -12,6 +12,8 @@
       "!components/streamdown",
       "!components/stick-to-bottom",
       "!lib/utils.ts",
+      "!tools/chatjs/tools.ts",
+      "!tools/chatjs/ui.ts",
       "!hooks/use-mobile.ts"
     ]
   },

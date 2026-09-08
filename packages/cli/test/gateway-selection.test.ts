@@ -1,26 +1,62 @@
 import { run } from "./run-command";
 import { afterAll, beforeAll, expect, it } from "bun:test";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+	mkdir,
+	mkdtemp,
+	readFile,
+	readdir,
+	rm,
+	writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gatewayMetadata } from "../../registry/gateways/metadata";
+import cliPackage from "../package.json";
 import gatewayPackage from "@chat-js/gateways/package.json";
 import { externalGatewayFixture } from "./external-gateway";
 import { GATEWAYS } from "../src/types";
 
+const originalRegistryUrl = process.env.CHATJS_REGISTRY_URL;
 const root = await mkdtemp(join(tmpdir(), "chatjs-gateway-integration-"));
 const packageDirectory = dirname(
 	fileURLToPath(import.meta.resolve("@chat-js/gateways/package.json")),
 );
 const cliDirectory = join(import.meta.dir, "..");
-const cliEntry = join(cliDirectory, "dist", "index.js");
+const cliEntry = join(root, "cli/node_modules/@chat-js/cli/dist/index.js");
 const archive = join(root, `chat-js-gateways-${gatewayPackage.version}.tgz`);
 
 beforeAll(async () => {
 	await run(packageDirectory, ["bun", "run", "build"]);
 	await run(packageDirectory, ["bun", "pm", "pack", "--destination", root]);
+	await run(join(cliDirectory, "../registry"), ["bun", "run", "build"]);
+	const output = join(cliDirectory, "../registry/dist/r");
+	const names = (await readdir(output)).sort();
+	const first = await Promise.all(
+		names.map((name) => readFile(join(output, name), "utf8")),
+	);
+	await run(join(cliDirectory, "../registry"), ["bun", "run", "build"]);
+	expect((await readdir(output)).sort()).toEqual(names);
+	expect(
+		await Promise.all(
+			names.map((name) => readFile(join(output, name), "utf8")),
+		),
+	).toEqual(first);
 	await run(cliDirectory, ["bun", "run", "build"]);
+	await run(cliDirectory, ["bun", "pm", "pack", "--destination", root]);
+	await mkdir(join(root, "cli"));
+	await writeFile(
+		join(root, "cli/package.json"),
+		JSON.stringify({
+			private: true,
+			dependencies: {
+				"@chat-js/cli": `file:${join(root, `chat-js-cli-${cliPackage.version}.tgz`)}`,
+			},
+			overrides: { "@chat-js/gateways": `file:${archive}` },
+		}),
+	);
+	await run(join(root, "cli"), ["bun", "install"]);
+	process.env.CHATJS_REGISTRY_URL = `http://127.0.0.1:${registryServer.port}/{name}.json`;
 });
 
 afterAll(async () => {
@@ -46,7 +82,19 @@ const registryServer = Bun.serve({
 	hostname: "127.0.0.1",
 	async fetch(request) {
 		const path = new URL(request.url).pathname;
-		if (path === "/gateway.json") return Response.json(external.root);
+		if (path === "/contracts.tgz") return new Response(Bun.file(archive));
+		if (path === "/gateway.json")
+			return Response.json({
+				...external.root,
+				dependencies: external.root.dependencies.map((d) =>
+					d.startsWith("@chat-js/gateways@")
+						? `@chat-js/gateways@http://127.0.0.1:${registryServer.port}/contracts.tgz`
+						: d,
+				),
+				registryDependencies: [
+					`http://127.0.0.1:${registryServer.port}/adapter.json`,
+				],
+			});
 		if (path === "/adapter.json") return Response.json(external.adapter);
 		if (path === "/v1/chat/completions") {
 			if (request.headers.get("authorization") !== "Bearer fixture-key")
@@ -69,10 +117,29 @@ const registryServer = Bun.serve({
 				usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
 			});
 		}
+		if (/^\/[a-z0-9-]+\.json$/.test(path)) {
+			const file = Bun.file(
+				join(cliDirectory, "../registry/dist/r", path.slice(1)),
+			);
+			if (await file.exists()) {
+				const item = await file.json();
+				if (item.dependencies)
+					item.dependencies = item.dependencies.map((d: string) =>
+						d.startsWith("@chat-js/gateways@")
+							? `@chat-js/gateways@http://127.0.0.1:${registryServer.port}/contracts.tgz`
+							: d,
+					);
+				return Response.json(item);
+			}
+		}
 		return new Response("Not found", { status: 404 });
 	},
 });
-afterAll(() => registryServer.stop(true));
+afterAll(() => {
+	registryServer.stop(true);
+	if (originalRegistryUrl === undefined) delete process.env.CHATJS_REGISTRY_URL;
+	else process.env.CHATJS_REGISTRY_URL = originalRegistryUrl;
+});
 
 for (const gateway of [...GATEWAYS, "acme"]) {
 	it(`${gateway}: independently installed ChatJS app typechecks and loads the registry adapter`, async () => {
@@ -87,16 +154,10 @@ for (const gateway of [...GATEWAYS, "acme"]) {
 				? `http://127.0.0.1:${registryServer.port}/gateway.json`
 				: gateway,
 			"--yes",
-			"--no-install",
 			"--no-electron",
-			"--package-manager",
-			"bun",
 		]);
 		const manifestPath = join(cwd, "package.json");
 		const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-		manifest.dependencies[gatewayPackage.name] = `file:${archive}`;
-		await writeFile(manifestPath, JSON.stringify(manifest));
-		await run(cwd, ["bun", "install", "--ignore-scripts"]);
 		const selectedSdk =
 			gateway === "acme"
 				? "@ai-sdk/openai-compatible"
@@ -139,6 +200,26 @@ defineConfig({ ai: { gateway: "${gateway}", tools: { video: { enabled: true, def
 }
 `,
 		);
+		if (gateway === "vercel") {
+			await run(cwd, ["node", cliEntry, "add", "word-count", "--yes"]);
+			const index = await readFile(join(cwd, "tools/chatjs/tools.ts"), "utf8");
+			await run(cwd, ["node", cliEntry, "add", "word-count", "--yes"]);
+			expect(await readFile(join(cwd, "tools/chatjs/tools.ts"), "utf8")).toBe(
+				index,
+			);
+			await run(cwd, [
+				"bunx",
+				"--bun",
+				"shadcn@4.21.0",
+				"add",
+				"@chatjs/get-weather",
+				"--yes",
+			]);
+			await run(cwd, ["node", cliEntry, "sync"]);
+			expect(
+				await readFile(join(cwd, "tools/chatjs/tools.ts"), "utf8"),
+			).toContain("getWeather as tool0");
+		}
 		await run(cwd, ["bun", "run", "test:types"]);
 		await writeFile(
 			join(cwd, "probe.ts"),
@@ -186,6 +267,43 @@ assert.equal(aiConfigSchema.safeParse({ ...ai, tools: { ...ai.tools, video: { en
 `,
 		);
 		await run(cwd, ["bunx", "--no-install", "tsx", "probe-config.ts"]);
+		if (gateway === "vercel") {
+			for (const name of [
+				"gateway-type-check.ts",
+				"probe.ts",
+				"probe-config.ts",
+			])
+				await rm(join(cwd, name));
+			await run(cwd, ["bun", "run", "lint"]);
+      const longDirectory = join(cwd, "tools/chatjs/long-renderer");
+			await mkdir(longDirectory);
+			const toolExport =
+				"wordCountWithAnIntentionallyLongNameForFormattingVerification";
+			const rendererExport =
+				"WordCountRendererWithAnIntentionallyLongNameForFormattingVerification";
+			await writeFile(
+				join(longDirectory, "tool.ts"),
+				`import { wordCount } from "../word-count/tool"; export const ${toolExport} = wordCount;`,
+			);
+			await writeFile(
+				join(longDirectory, "renderer.tsx"),
+				`import { WordCountRenderer } from "../word-count/renderer"; export const ${rendererExport} = WordCountRenderer;`,
+			);
+			await writeFile(
+				join(longDirectory, "chatjs.json"),
+				JSON.stringify({
+					contractVersion: 1,
+					kind: "tool",
+					id: "long-renderer",
+					toolExport,
+					rendererExport,
+				}),
+			);
+			await run(cwd, ["node", cliEntry, "sync"]);
+			await run(cwd, ["bun", "run", "format"]);
+			await run(cwd, ["node", cliEntry, "sync"]);
+			await run(cwd, ["bun", "run", "lint"]);
+		}
 		expect(
 			await Bun.file(
 				join(cwd, "lib/ai/gateways/openrouter-gateway.ts"),

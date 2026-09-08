@@ -5,7 +5,11 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildConfigTs } from "./config-builder";
-import { scaffoldElectron, scaffoldFromGit, scaffoldFromTemplate } from "./scaffold";
+import {
+	scaffoldElectron,
+	scaffoldFromGit,
+	scaffoldFromTemplate,
+} from "./scaffold";
 
 const tempDirs: string[] = [];
 
@@ -201,7 +205,7 @@ describe("scaffoldFromTemplate", () => {
 			scripts?: Record<string, string>;
 		};
 
-		expect(packageJson.packageManager).toBe("bun@1.3.1");
+		expect(packageJson.packageManager).toBe(`bun@${Bun.version}`);
 		expect(packageJson.dependencies["@better-auth/core"]).toBe("1.5.6");
 		expect(packageJson.dependencies["@better-auth/electron"]).toBe("1.5.6");
 		expect(packageJson.dependencies["better-auth"]).toBe("1.5.6");
@@ -231,7 +235,7 @@ describe("scaffoldFromTemplate", () => {
 			scripts: Record<string, string>;
 		};
 
-		expect(packageJson.packageManager).toBeUndefined();
+		expect(packageJson.packageManager).toMatch(/^(npm|pnpm)@/);
 		for (const script of Object.values(packageJson.scripts)) {
 			expect(script).not.toContain("bun ");
 			expect(script).not.toContain("bunx");
@@ -272,7 +276,7 @@ describe("scaffoldFromTemplate", () => {
 			"utf8",
 		);
 
-		expect(packageJson.packageManager).toBeUndefined();
+		expect(packageJson.packageManager).toMatch(/^(npm|pnpm)@/);
 		expect(workspaceConfig).toContain("onlyBuiltDependencies:");
 		expect(workspaceConfig).toContain("allowBuilds:");
 		expect(workspaceConfig).toContain("better-sqlite3: true");
@@ -369,7 +373,6 @@ describe("scaffoldFromGit", () => {
 		}
 
 		await scaffoldFromGit(source, destination, {
-			gateway: "vercel",
 			storage: { provider: "vercel-blob", options: {} },
 		});
 
@@ -400,7 +403,7 @@ describe("scaffoldElectron", () => {
 			pnpm?: unknown;
 		};
 
-		expect(packageJson.packageManager).toBeUndefined();
+		expect(packageJson.packageManager).toMatch(/^(npm|pnpm)@/);
 		expect(packageJson.pnpm).toBeUndefined();
 		expect(packageJson.devDependencies["@better-auth/electron"]).toBe("1.5.6");
 		expect(packageJson.devDependencies["better-auth"]).toBe("1.5.6");

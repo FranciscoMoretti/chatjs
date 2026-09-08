@@ -18,7 +18,7 @@ const litellmModelsResponseSchema = z.object({
       id: z.string(),
       object: z.string().optional(),
       owned_by: z.string().optional(),
-    }),
+    })
   ),
 });
 
@@ -118,7 +118,7 @@ export class LiteLLMGateway
       if (!response.ok) {
         this.log.error(
           { status: response.status, statusText: response.statusText, url },
-          "LiteLLM proxy returned non-OK response",
+          "LiteLLM proxy returned non-OK response"
         );
         throw new Error(`Failed to fetch models: ${response.statusText}`);
       }
@@ -129,15 +129,17 @@ export class LiteLLMGateway
 
       this.log.info(
         { modelCount: result.length },
-        "Successfully fetched models from LiteLLM proxy",
+        "Successfully fetched models from LiteLLM proxy"
       );
       return result;
     } catch (error) {
       this.log.error(
         { err: error, url },
-        "Error fetching models from LiteLLM proxy, falling back to generated models",
+        "Error fetching models from LiteLLM proxy, falling back to generated models"
       );
       return [...this.getFallbackModels(this.type)];
     }
   }
 }
+
+export { LiteLLMGateway as Gateway };
