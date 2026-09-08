@@ -2,6 +2,10 @@
 
 Tentative implementation plan for [#312](https://github.com/FranciscoMoretti/chat-js/issues/312), refreshed 2026-09-07 against main `5b6664e7` (includes gateway registry [#332](https://github.com/FranciscoMoretti/chat-js/pull/332)). This delivery prepares the migration; it does not switch the app engine, change production data, deploy, publish a fork or submit upstream reports.
 
+## Current planning focus
+
+The [rough stages and decisions](stages.md) from the discussion are saved. Current focus is [Stage 1: ownership and contracts](stage-1-contracts.md), with detailed work packages, interface semantics, acceptance scenarios and an exit gate. This is a plan for producing the contract packet; Stage 1 has not been declared complete.
+
 ## Recommended direction
 
 Migrate the existing ChatJS application and its reusable framework. Keep its UI composition, tree semantics, selected gateway contracts and feature services. Replace request-owned generation and Redis stream resumption with Eve execution. Examples must be applications built with ChatJS; the closed standalone #331 remains research evidence.
