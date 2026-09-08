@@ -48,6 +48,7 @@ apps/*/test-results/
 apps/*/playwright-report/
 apps/*/blob-report/
 apps/*/playwright/*
+apps/*/uiverify-archive/
 
 tsconfig.tsbuildinfo
 
@@ -80,3 +81,5 @@ apps/electron/branding.json
 # Generated gateway registry payloads
 packages/registry/items/*-gateway.json
 packages/registry/gateways.json
+
+apps/docs/.uiverify-shots/

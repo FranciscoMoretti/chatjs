@@ -23,6 +23,9 @@
 		"test:unit": "bun test ./.agents/skills/worktree-ports/scripts/worktree-runtime.test.ts && turbo run test:unit",
 		"test:types": "turbo run test:types",
 		"docs:links": "turbo run docs:links --filter=@chatjs/docs",
+		"test:visual:docs": "bun --filter=@chatjs/docs run test:visual",
+		"uiverify:upload:docs": "uiverify upload --static-dir apps/docs/uiverify-archive",
+		"uiverify:docs": "bun run test:visual:docs && bun run uiverify:upload:docs",
 		"template:sync": "bun scripts/sync-template.ts",
 		"template:check": "bun scripts/sync-template.ts --check",
 		"chat-js": "bun --filter @chat-js/cli start",
@@ -38,13 +41,20 @@
 	},
 	"overrides": {
 		"//@better-auth/core": "Pinned because @better-auth/electron and other @better-auth/* packages declare a strict peerDependency on @better-auth/core@1.5.6. Do not remove without auditing all @better-auth/* peer ranges.",
-		"@better-auth/core": "1.5.6"
+		"@better-auth/core": "1.5.6",
+		"//astro": "Pinned to Blume's Astro version so workspace hoisting cannot bind Blume integrations to an incompatible copy.",
+		"astro": "7.3.1"
 	},
 	"devDependencies": {
 		"@changesets/changelog-github": "^0.5.2",
 		"@changesets/cli": "^2.29.8",
+		"@uiverify/vitest": "^1.2.1",
+		"@vitest/browser-playwright": "^4.1.11",
 		"dotenv-cli": "^8.0.0",
-		"turbo": "2.10.12"
+		"playwright": "^1.59.1",
+		"turbo": "2.10.12",
+		"uiverify": "^1.4.2",
+		"vitest": "^4.1.11"
 	},
 	"engines": {
 		"node": ">=22"
