@@ -40,9 +40,10 @@ jobs:
             fi
           fi
       - uses: oven-sh/setup-bun@v2
-        if: steps.affected.outputs.run == 'true'
         with:
           bun-version: 1.3.1
+      - name: Test release recovery
+        run: bun test scripts/release-fallback.test.ts
       - uses: actions/cache@v4
         if: steps.affected.outputs.run == 'true'
         with:

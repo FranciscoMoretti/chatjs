@@ -48,11 +48,12 @@ function isLocalSource(source: string): boolean {
 	return !/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(source) || path.isAbsolute(source);
 }
 
-export async function fetchJson(source: string): Promise<unknown> {
+export async function fetchJson(
+	source: string,
+	options?: { secureTransport: boolean },
+): Promise<unknown> {
 	const isLocalPath = isLocalSource(source);
-	const filePath = isLocalPath
-		? path.resolve(process.cwd(), source)
-		: source;
+	const filePath = isLocalPath ? path.resolve(process.cwd(), source) : source;
 
 	if (isLocalPath) {
 		const content = await fs.readFile(filePath, "utf8").catch(() => {
@@ -61,11 +62,35 @@ export async function fetchJson(source: string): Promise<unknown> {
 		return JSON.parse(content);
 	}
 
-	const res = await fetch(filePath).catch(() => {
-		throw new Error(
-			`Could not reach registry. Check your internet connection.`,
-		);
-	});
+	let url = filePath;
+	let res: Response;
+	for (let redirects = 0; ; redirects++) {
+		if (options?.secureTransport) {
+			const parsed = new URL(url);
+			if (
+				parsed.protocol !== "https:" &&
+				!(
+					redirects === 0 &&
+					parsed.protocol === "http:" &&
+					["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname)
+				)
+			)
+				throw new Error(
+					"Remote gateway registries must use HTTPS (HTTP is allowed only on loopback).",
+				);
+		}
+		res = await fetch(url, { redirect: "manual" }).catch(() => {
+			throw new Error(
+				`Could not reach registry. Check your internet connection.`,
+			);
+		});
+
+		if (![301, 302, 303, 307, 308].includes(res.status)) break;
+		const location = res.headers.get("location");
+		if (!location || redirects >= 10)
+			throw new Error("Invalid or excessive registry redirects.");
+		url = new URL(location, url).href;
+	}
 
 	if (res.status === 404) {
 		throw new Error(`Registry resource not found: ${filePath}`);

@@ -210,8 +210,7 @@ function resolveToolsDir(toolsPath: string): string {
 }
 
 function validateGatewayKey(env: NodeJS.ProcessEnv): ValidationError | null {
-  // Prevent TS from narrowing to the current literal config value.
-  const gateway = (() => config.ai.gateway as string)();
+  const gateway: string = config.ai.gateway;
   const missing = gatewayEnvRequirements
     .map((requirement) => getMissingRequirement(requirement, env))
     .filter((value) => value !== null);
@@ -410,7 +409,7 @@ function validateBaseUrl(env: NodeJS.ProcessEnv): ValidationError | null {
 }
 
 function checkGatewaySnapshot(): string | null {
-  if ((config.ai.gateway as string) === generatedForGateway) {
+  if (config.ai.gateway === generatedForGateway) {
     return null;
   }
   return `models.generated.ts was built for "${generatedForGateway}" but config uses "${config.ai.gateway}". Run \`bun fetch:models\` to update the fallback snapshot.`;

@@ -39,15 +39,15 @@ export async function resolveGateway(
 	const visited = new Map<string, GatewayRegistryItem>();
 	const visiting = new Set<string>();
 	function address(name: string, parent?: string): string {
-		if (/^https?:\/\//.test(name) || isAbsolute(name)) return name;
+		if (/^https?:\/\//i.test(name) || isAbsolute(name)) return name;
 		if (name.startsWith(".") || name.endsWith(".json")) {
-			return parent && /^https?:\/\//.test(parent)
+			return parent && /^https?:\/\//i.test(parent)
 				? new URL(name, parent).href
 				: resolve(parent ? dirname(parent) : process.cwd(), name);
 		}
 		if (registry) return registry.replace("{name}", encodeURIComponent(name));
 		if (parent && !parent.startsWith("builtin:")) {
-			return /^https?:\/\//.test(parent)
+			return /^https?:\/\//i.test(parent)
 				? new URL(`${name}.json`, parent).href
 				: resolve(dirname(parent), `${name}.json`);
 		}
@@ -65,7 +65,7 @@ export async function resolveGateway(
 						item.name === location.slice(8) ||
 						item.meta.chatjs.id === location.slice(8),
 				)
-			: await fetchJson(location);
+			: await fetchJson(location, { secureTransport: true });
 		if (!raw)
 			throw new Error(
 				`Unknown gateway "${location.slice(8)}". Use a built-in name, registry URL, or local JSON path.`,
@@ -81,6 +81,8 @@ export async function resolveGateway(
 	const location = address(source);
 	const selected = await visit(location);
 	const definition = selected.meta?.chatjs;
+	if (selected.type !== "registry:item")
+		throw new Error("Selected gateway root must have type registry:item.");
 	if (!definition)
 		throw new Error(
 			"Selected registry item must declare meta.chatjs with a version 1 gateway contract.",

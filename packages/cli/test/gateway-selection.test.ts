@@ -1,3 +1,4 @@
+import { run } from "./run-command";
 import { afterAll, beforeAll, expect, it } from "bun:test";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -16,20 +17,6 @@ const cliDirectory = join(import.meta.dir, "..");
 const cliEntry = join(cliDirectory, "dist", "index.js");
 const archive = join(root, `chat-js-gateways-${gatewayPackage.version}.tgz`);
 
-async function run(cwd: string, command: string[]) {
-	const child = Bun.spawn(command, { cwd, stdout: "pipe", stderr: "pipe" });
-	const [exitCode, stdout, stderr] = await Promise.all([
-		child.exited,
-		new Response(child.stdout).text(),
-		new Response(child.stderr).text(),
-	]);
-	if (exitCode !== 0) {
-		throw new Error(
-			`${command.join(" ")} failed in ${cwd}:\n${stdout}\n${stderr}`,
-		);
-	}
-}
-
 beforeAll(async () => {
 	await run(packageDirectory, ["bun", "run", "build"]);
 	await run(packageDirectory, ["bun", "pm", "pack", "--destination", root]);
@@ -37,7 +24,20 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-	await rm(root, { recursive: true, force: true });
+	let timeout: ReturnType<typeof setTimeout> | undefined;
+	try {
+		await Promise.race([
+			rm(root, { recursive: true, force: true }),
+			new Promise<never>((_, reject) => {
+				timeout = setTimeout(
+					() => reject(new Error("Gateway test cleanup timed out")),
+					180_000,
+				);
+			}),
+		]);
+	} finally {
+		clearTimeout(timeout);
+	}
 });
 
 const external = externalGatewayFixture();

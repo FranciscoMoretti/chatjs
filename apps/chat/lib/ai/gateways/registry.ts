@@ -4,7 +4,7 @@ import { gatewayType } from "../gateway-model-defaults";
 import type { generatedForGateway, models } from "../models.generated";
 
 export type InstalledGateway = InstanceType<typeof Gateway>;
-export type GatewayType = InstalledGateway["type"];
+export type GatewayType = typeof gatewayType;
 export type GatewayProvider = GatewayProviderBase<GatewayType>;
 export const DEFAULT_GATEWAY = gatewayType;
 export type DefaultGateway = GatewayType;

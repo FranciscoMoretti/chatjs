@@ -28,6 +28,7 @@ export function externalGatewayFixture() {
 				chatjs: {
 					...base.meta.chatjs,
 					id: "acme",
+					optionalEnv: [],
 					envRequirements: [{ options: [["ACME_BASE_URL", "ACME_API_KEY"]] }],
 				},
 			},

@@ -59,3 +59,8 @@ config. Test model creation and discovery through `GatewayProvider` with injecte
 fixtures. The integration suite in `packages/cli/test/gateway-selection.test.ts`
 uses an HTTP registry with an unknown `acme` gateway and a separate adapter item.
 No paid provider credentials are required for these tests.
+
+Installation rejects symlinked destinations and output paths during preflight.
+These checks protect against symlinks already present in a cloned app. They are
+not an atomic filesystem sandbox against processes concurrently modifying the
+same destination with the user's permissions.

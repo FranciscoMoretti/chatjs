@@ -21,7 +21,8 @@ import {
   PlaygroundTransport,
 } from "./thread-playground-model";
 
-const INSTALL_COMMAND = "bun add @chat-js/thread ai @ai-sdk/react";
+const INSTALL_COMMAND =
+  "bun add @chat-js/thread ai@^7.0.93 @ai-sdk/react@^4.0.96 react";
 const MAX_ACTIVE_RUNS = 8;
 
 const STATUS_CLASS = {
@@ -90,7 +91,7 @@ function Conversation({
   responseCount: number;
 }) {
   return (
-    <section className="flex min-h-[43rem] min-w-0 flex-col">
+    <section className="flex h-[43rem] min-w-0 flex-col">
       <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-border border-b px-5 py-3">
         <div>
           <p className="font-medium text-sm">Active conversation</p>
@@ -108,7 +109,7 @@ function Conversation({
         </div>
       </header>
 
-      <div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-7">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-7">
         {chat.messages.map((message) => {
           const isUser = message.role === "user";
           const siblings = chat.tree.getSiblings(message.id);
@@ -226,6 +227,18 @@ function Conversation({
               </select>
             </label>
             <div className="flex items-center gap-1.5">
+              <button
+                aria-label="Stop selected response"
+                className="h-8 px-2 text-muted-foreground text-xs hover:bg-secondary hover:text-foreground disabled:opacity-30"
+                disabled={
+                  chat.status !== "submitted" && chat.status !== "streaming"
+                }
+                onClick={() => chat.stop()}
+                title="Stop selected response"
+                type="button"
+              >
+                Stop selected
+              </button>
               <button
                 aria-label="Stop all responses"
                 className="grid size-8 place-items-center text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
@@ -481,7 +494,7 @@ export function ThreadPlayground() {
           playgroundError={playgroundError}
           responseCount={responseCount}
         />
-        <aside className="flex min-h-[43rem] min-w-0 flex-col border-border border-t bg-muted/15 lg:border-t-0 lg:border-l">
+        <aside className="flex h-[43rem] min-w-0 flex-col border-border border-t bg-muted/15 lg:border-t-0 lg:border-l">
           <header className="flex min-h-16 items-center justify-between border-border border-b px-5 py-3">
             <div>
               <p className="font-medium text-sm">Message tree</p>

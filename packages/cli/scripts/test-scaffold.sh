@@ -68,6 +68,13 @@ NODE
     yarn) yarn install ;;
     *) echo "Unsupported package manager: $package_manager" >&2; exit 1 ;;
   esac
+  node --input-type=module -e '
+import { createRequire } from "node:module";
+const require = createRequire(process.cwd() + "/package.json");
+const manifest = require("@chat-js/gateways/package.json");
+for (const key of Object.keys(manifest.exports)) {
+  if (key !== "./package.json") await import("@chat-js/gateways" + key.slice(1));
+}'
   popd >/dev/null
 
   if [ "$electron_flag" = "true" ]; then
