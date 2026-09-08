@@ -3,10 +3,10 @@
 import { format, isWithinInterval } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import type { TypelessToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-part";
+import type { ToolPartFromTool } from "@/tools/chatjs/_shared/lib/tool-part";
 import type { getWeather, WeatherAtLocation } from "./tool";
 
-type GetWeatherRendererTool = TypelessToolPartFromTool<typeof getWeather>;
+type GetWeatherRendererTool = ToolPartFromTool<typeof getWeather>;
 
 const SAMPLE = {
   latitude: 37.763_283,
@@ -189,13 +189,17 @@ function WeatherCard({
   const currentTimeIndex = weatherAtLocation.hourly.time.findIndex(
     (time) => new Date(time) >= new Date(weatherAtLocation.current.time)
   );
+  const displayStartIndex =
+    currentTimeIndex === -1
+      ? Math.max(0, weatherAtLocation.hourly.time.length - hoursToShow)
+      : currentTimeIndex;
   const displayTimes = weatherAtLocation.hourly.time.slice(
-    currentTimeIndex,
-    currentTimeIndex + hoursToShow
+    displayStartIndex,
+    displayStartIndex + hoursToShow
   );
   const displayTemperatures = weatherAtLocation.hourly.temperature_2m.slice(
-    currentTimeIndex,
-    currentTimeIndex + hoursToShow
+    displayStartIndex,
+    displayStartIndex + hoursToShow
   );
 
   return (
