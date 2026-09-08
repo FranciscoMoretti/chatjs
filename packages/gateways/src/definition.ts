@@ -66,7 +66,8 @@ export const gatewayDefinitionSchema = z
   .superRefine((definition, ctx) => {
     for (const kind of ["image", "video"] as const) {
       if (
-        definition.defaults.tools[kind].enabled &&
+        (definition.defaults.tools[kind].enabled ||
+          definition.defaults.tools[kind].default !== undefined) &&
         !definition.capabilities[kind]
       ) {
         ctx.addIssue({

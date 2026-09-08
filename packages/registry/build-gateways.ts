@@ -1,8 +1,11 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { builtInGateways } from "./gateways/catalog";
 
 const directory = new URL("./items/", import.meta.url);
 await mkdir(directory, { recursive: true });
+for (const name of await readdir(directory)) {
+  if (name.endsWith("-gateway.json")) await rm(new URL(name, directory));
+}
 for (const item of builtInGateways) {
   await writeFile(
     new URL(`${item.name}.json`, directory),

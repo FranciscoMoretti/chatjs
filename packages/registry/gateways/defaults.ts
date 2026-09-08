@@ -159,46 +159,7 @@ const openaiDefaults = {
 } satisfies GatewayModelDefaults<Gateways["openai"]>;
 
 const openaiCompatibleDefaults = {
-  providerOrder: ["openai"],
-  disabledModels: [],
-  curatedDefaults: [
-    "gpt-5-nano",
-    "gpt-5-mini",
-    "gpt-5.2",
-    "gpt-5.2-chat-latest",
-  ],
-  anonymousModels: ["gpt-5-nano"],
-  workflows: {
-    chat: "gpt-5-mini",
-    title: "gpt-5-nano",
-    pdf: "gpt-5-mini",
-    chatImageCompatible: "gpt-4o-mini",
-  },
-  tools: {
-    webSearch: { enabled: false },
-    urlRetrieval: { enabled: false },
-    codeExecution: { enabled: false },
-    mcp: { enabled: false },
-    documents: {
-      enabled: true,
-      types: { text: true, code: true, sheet: true },
-    },
-    followupSuggestions: { enabled: false, default: "gpt-5-nano" },
-    text: { polish: "gpt-5-mini" },
-    sheet: { format: "gpt-5-mini", analyze: "gpt-5-mini" },
-    code: { edits: "gpt-5-mini" },
-    image: { enabled: false, default: "gpt-image-1" },
-    video: { enabled: false },
-    deepResearch: {
-      enabled: false,
-      defaultModel: "gpt-5-nano",
-      finalReportModel: "gpt-5-mini",
-      allowClarification: true,
-      maxResearcherIterations: 1,
-      maxConcurrentResearchUnits: 2,
-      maxSearchQueries: 2,
-    },
-  },
+  ...openaiDefaults,
 } satisfies GatewayModelDefaults<Gateways["openai-compatible"]>;
 
 const litellmDefaults = {

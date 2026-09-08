@@ -369,6 +369,7 @@ describe("scaffoldFromGit", () => {
 		}
 
 		await scaffoldFromGit(source, destination, {
+			gateway: "vercel",
 			storage: { provider: "vercel-blob", options: {} },
 		});
 

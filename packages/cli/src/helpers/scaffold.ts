@@ -466,7 +466,7 @@ export async function scaffoldFromGit(
     process.cwd()
   );
   await rm(join(destination, ".git"), { recursive: true, force: true });
-  if (options?.gateway) {
+  if (options?.gateway && existsSync(join(destination, "lib/ai/gateway.ts"))) {
     await configureGatewayProvider(destination, options.gateway);
   }
   if (!existsSync(join(destination, "lib", "storage-provider.ts"))) {

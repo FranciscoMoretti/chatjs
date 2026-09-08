@@ -31,7 +31,7 @@ The CLI installs only that item's adapter files and declared dependencies.
 `@chat-js/gateways` supplies shared contracts and utilities, with no gateway
 implementations. Third-party items declare their own ID, defaults, capabilities,
 and credentials; the CLI has no fixed gateway enum. See
-[gateway authoring](../registry/gateways/README.md) for the version 1 contract.
+[gateway authoring](https://github.com/FranciscoMoretti/chat-js/blob/main/packages/registry/gateways/README.md) for the version 1 contract.
 
 Run `bun --filter @chat-js/cli test:gateways` from the repository root to verify
 independent installs of all built-ins and an external registry gateway.

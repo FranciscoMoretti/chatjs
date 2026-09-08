@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { basename, join, relative, resolve } from "node:path";
 import { intro, outro } from "@clack/prompts";
@@ -175,10 +176,14 @@ export const create = new Command()
 				options.gateway ? options.registry : undefined,
 			);
 			const gateway = gatewaySelection.definition.id;
-			const coreFeatures = await promptCoreFeatures(options.yes);
+			const coreFeatures = await promptCoreFeatures(
+				options.yes,
+				gatewaySelection.definition,
+			);
 			const documentTypes = await promptDocumentTypes(
 				options.yes,
 				coreFeatures.documents,
+				gatewaySelection.definition,
 			);
 
 			let registryItems: Awaited<ReturnType<typeof fetchRegistryIndex>> = [];
@@ -230,6 +235,13 @@ export const create = new Command()
 						storage,
 						gateway: gatewaySelection,
 					});
+					if (!existsSync(join(targetDir, "lib/ai/gateway.ts"))) {
+						scaffoldSpinner.succeed("Repository cloned.");
+						logger.warn(
+							"This repository has no ChatJS gateway slot. Skipping ChatJS configuration and installation.",
+						);
+						return;
+					}
 				} else {
 					await scaffoldFromTemplate(targetDir, {
 						packageManager,

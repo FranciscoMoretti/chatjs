@@ -79,7 +79,8 @@ export function collectEnvChecklist(input: {
 	});
 
 	// --- AI Gateway ---
-	const gwReq = input.gatewayRequirements ?? [gatewayEnvRequirements[input.gateway]];
+	const gwReq =
+		input.gatewayRequirements ?? gatewayEnvRequirements[input.gateway] ?? [];
 	const gwEntries = gwReq.flatMap(requirementToEntries);
 
 	entries.push(...gwEntries);

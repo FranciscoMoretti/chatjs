@@ -143,6 +143,7 @@
     },
     "@chat-js/cli#test:unit": {
       "dependsOn": ["build"],
+      "outputs": ["templates/**"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/apps/chat/**",

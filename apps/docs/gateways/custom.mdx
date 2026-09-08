@@ -1,307 +1,57 @@
 ---
 title: "Custom Gateway"
-description: "Add a new AI gateway to the multi-gateway system"
+description: "Compose a ChatJS app with a third-party gateway registry item"
 ---
 
-Add support for any AI provider by implementing the `GatewayProvider` interface and registering it. If your provider follows the OpenAI API format, consider using the built-in [OpenAI Compatible](/gateways/openai-compatible) gateway instead.
+Install a custom gateway when creating your app. If your endpoint implements the OpenAI API, you can also use the built-in [OpenAI Compatible](/gateways/openai-compatible) gateway.
 
-## Steps
-
-### 1. Install the provider SDK
-
-If your provider has an AI SDK adapter, install it:
-
-```bash
-bun add @ai-sdk/openai-compatible
+```sh
+chat-js create my-chat --gateway https://example.com/r/my-gateway.json
+chat-js create my-chat --gateway ./my-gateway.json
 ```
 
-For providers with a dedicated SDK (like `@ai-sdk/openai` or `@openrouter/ai-sdk-provider`), install that instead.
+Remote registry items and their dependencies require HTTPS. HTTP is supported for loopback development servers only.
 
-### 2. Add environment variables
+## Author a registry item
 
-Register the required env vars in `lib/env-schema.ts`:
+Start from a built-in item in the [gateway registry](https://github.com/FranciscoMoretti/chat-js/tree/main/packages/registry/gateways). The [authoring contract](https://github.com/FranciscoMoretti/chat-js/blob/main/packages/registry/gateways/README.md) describes the complete metadata and adapter interface.
 
-```ts title="lib/env-schema.ts"
-export const serverEnvSchema = {
-  // ... existing vars
+Your root item must use `type: "registry:item"`. Declare its SDK in `dependencies`, and include an adapter exporting `Gateway` at `~/lib/ai/gateway.ts`. Supporting files belong under `~/lib/ai/gateway/` and can come from `registryDependencies`.
 
-  // My Gateway (required when config.ai.gateway is "my-gateway")
-  MY_GATEWAY_BASE_URL: z.string().url().optional(),
-  MY_GATEWAY_API_KEY: z.string().optional(),
-};
-```
+Set `meta.chatjs` with:
 
-Register the build-time requirement in `lib/config-requirements.ts` as well. The `Record<GatewayType, EnvRequirement>` type reports a missing entry after you add the gateway to the registry:
+- `kind: "gateway"`, `contractVersion: 1`, and a unique literal `id`.
+- `capabilities` describing image and video support.
+- Complete `defaults` for models, workflows, documents, and tools. Use model IDs served by your endpoint.
+- `envRequirements`, an array of required groups. Each group's `options` contains alternative sets of variables.
+- `optionalEnv` for additional variables the adapter reads.
 
-```ts title="lib/config-requirements.ts"
-export const gatewayEnvRequirements: Record<GatewayType, EnvRequirement> = {
-  // ... existing gateways
-  "my-gateway": {
-    options: [["MY_GATEWAY_BASE_URL", "MY_GATEWAY_API_KEY"]],
-    description: "MY_GATEWAY_BASE_URL, MY_GATEWAY_API_KEY",
-  },
-};
-```
+For example, an endpoint that requires a base URL and accepts an optional API key can declare:
 
-### 3. Create the gateway class
-
-Create `lib/ai/gateways/my-gateway.ts`. Every gateway implements the `GatewayProvider` interface:
-
-```ts
-type GatewayProvider<
-  TGateway,
-  TModelId,
-  TImageModelId,
-  TVideoModelId
-> = {
-  readonly type: TGateway;
-  createLanguageModel(modelId: TModelId): LanguageModel;
-  createImageModel(modelId: TImageModelId): ImageModel | null;
-  createVideoModel(modelId: TVideoModelId): Experimental_VideoModelV3 | null;
-  fetchModels(): Promise<AiGatewayModel[]>;
-};
-```
-
-Full example:
-
-```ts title="lib/ai/gateways/my-gateway.ts"
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { Experimental_VideoModelV3 } from "@ai-sdk/provider";
-import type { ImageModel, LanguageModel } from "ai";
-import { createModuleLogger } from "@/lib/logger";
-import type { AiGatewayModel } from "../ai-gateway-models-schemas";
-import { models as fallbackModels } from "../models.generated";
-import type { GatewayProvider } from "./gateway-provider";
-
-const log = createModuleLogger("ai/gateways/my-gateway");
-
-type MyProviderModelResponse = {
-  id: string;
-  object: string;
-  created: number;
-  owned_by: string;
-};
-
-function toAiGatewayModel(model: MyProviderModelResponse): AiGatewayModel {
-  return {
-    id: model.id,
-    object: "model",
-    created: model.created ?? 0,
-    owned_by: model.owned_by ?? "unknown",
-    name: model.id,
-    description: "",
-    context_window: 0,
-    max_tokens: 0,
-    type: "language",
-    pricing: {},
-  };
-}
-
-export class MyGateway implements GatewayProvider<
-  "my-gateway",
-  string,
-  string,
-  string
-> {
-  readonly type = "my-gateway" as const;
-
-  private getProvider() {
-    const apiKey = this.getApiKey();
-    const baseURL = this.getBaseURL();
-    if (!baseURL) {
-      throw new Error("MY_GATEWAY_BASE_URL is not configured");
-    }
-    return createOpenAICompatible({
-      name: "my-gateway",
-      baseURL,
-      apiKey,
-    });
-  }
-
-  createLanguageModel(modelId: string): LanguageModel {
-    const provider = this.getProvider();
-    return provider(modelId);
-  }
-
-  createImageModel(modelId: string): ImageModel | null {
-    // Return null if your provider does not support image generation.
-    const provider = this.getProvider();
-    return provider.imageModel(modelId);
-  }
-
-  createVideoModel(_modelId: string): Experimental_VideoModelV3 | null {
-    return null;
-  }
-
-  private getApiKey(): string | undefined {
-    return process.env.MY_GATEWAY_API_KEY;
-  }
-
-  private getBaseURL(): string | undefined {
-    return process.env.MY_GATEWAY_BASE_URL;
-  }
-
-  async fetchModels(): Promise<AiGatewayModel[]> {
-    const apiKey = this.getApiKey();
-    const baseURL = this.getBaseURL();
-
-    if (!baseURL) {
-      log.warn("No MY_GATEWAY_BASE_URL found, using fallback models");
-      return fallbackModels as unknown as AiGatewayModel[];
-    }
-
-    const url = `${baseURL}/models`;
-    log.debug({ url }, "Fetching models from my provider");
-
-    try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (apiKey) {
-        headers.Authorization = `Bearer ${apiKey}`;
-      }
-
-      const response = await fetch(url, {
-        headers,
-        next: { revalidate: 3600 },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch models: ${response.statusText}`);
-      }
-
-      const body = await response.json();
-      const models = (body.data ?? []) as MyProviderModelResponse[];
-      const result = models.map(toAiGatewayModel);
-
-      log.info({ modelCount: result.length }, "Fetched models");
-      return result;
-    } catch (error) {
-      log.error({ err: error, url }, "Error fetching models, using fallback");
-      return fallbackModels as unknown as AiGatewayModel[];
-    }
-  }
+```json
+{
+  "envRequirements": [{ "options": [["MY_GATEWAY_BASE_URL"]] }],
+  "optionalEnv": ["MY_GATEWAY_API_KEY"]
 }
 ```
 
-<Callout type="tip">
-  If your provider uses a dedicated SDK (not OpenAI-compatible), replace
-  `createOpenAICompatible` with the provider-specific factory. See the [OpenAI
-  gateway](https://github.com/franciscomoretti/chat-js/blob/main/apps/chat/lib/ai/gateways/openai-gateway.ts)
-  for an example that uses `createOpenAI`.
-</Callout>
+This is a metadata fragment, not a complete registry item. Read declared credentials through the adapter's injected environment, such as `this.env.MY_GATEWAY_API_KEY` when extending `GatewayRuntime` from `@chat-js/gateways/runtime`.
 
-### 4. Register in the gateway registry
+## Generated app
 
-Import your class and add it to the registry:
+The CLI installs the selected adapter and dependencies, then writes `lib/ai/gateway-model-defaults.ts` with the gateway ID, defaults, capabilities, and environment declarations. `lib/env.ts` forwards those declared variables to the adapter, and `scripts/check-env.ts` checks the requirements. You do not add gateway entries to a central application registry or environment schema.
 
-```ts title="lib/ai/gateways/registry.ts"
-import { MyGateway } from "./my-gateway";
+The generated `chat.config.ts` selects your gateway. Add credentials to `.env.local`, then verify the app:
 
-export const gatewayRegistry = {
-  vercel: () => new VercelGateway(),
-  openrouter: () => new OpenRouterGateway(),
-  openai: () => new OpenAIGateway(),
-  "openai-compatible": () => new OpenAICompatibleGateway(),
-  litellm: () => new LiteLLMGateway(),
-  "my-gateway": () => new MyGateway(), // add here
-} as const satisfies Record<string, () => GatewayProviderBase>;
-```
-
-### 5. Add gateway defaults
-
-Add a `myGatewayDefaults` block to `lib/ai/gateway-model-defaults.ts` and register it in `GATEWAY_MODEL_DEFAULTS`:
-
-```ts title="lib/ai/gateway-model-defaults.ts"
-export const GATEWAY_MODEL_DEFAULTS: {
-  [G in GatewayType]: ModelDefaultsFor<G>;
-} = {
-  vercel: vercelDefaults,
-  openrouter: openrouterDefaults,
-  openai: openaiDefaults,
-  "openai-compatible": openaiCompatibleDefaults,
-  litellm: litellmDefaults,
-  "my-gateway": myGatewayDefaults,
-};
-```
-
-Use the closest existing defaults block as a starting point. Update every model-backed workflow and tool default to IDs that your gateway accepts. The mapped `ModelDefaultsFor<"my-gateway">` type checks that the block is complete.
-
-### 6. Add the schema variant
-
-In `lib/config-schema.ts`, add your gateway to two places:
-
-**The schema map** (compile-time enforced):
-
-```ts title="lib/config-schema.ts"
-const gatewaySchemaMap: {
-  [G in GatewayType]: ReturnType<typeof createAiSchema<G>>;
-} = {
-  vercel: createAiSchema("vercel"),
-  openrouter: createAiSchema("openrouter"),
-  openai: createAiSchema("openai"),
-  "openai-compatible": createAiSchema("openai-compatible"),
-  litellm: createAiSchema("litellm"),
-  "my-gateway": createAiSchema("my-gateway"), // add here
-};
-```
-
-**The discriminated union** (runtime validation):
-
-```ts title="lib/config-schema.ts"
-export const aiConfigSchema = z.discriminatedUnion("gateway", [
-  gatewaySchemaMap.vercel,
-  gatewaySchemaMap.openrouter,
-  gatewaySchemaMap.openai,
-  gatewaySchemaMap["openai-compatible"],
-  gatewaySchemaMap.litellm,
-  gatewaySchemaMap["my-gateway"], // add here
-]);
-```
-
-<Callout type="note">
-  The `gatewaySchemaMap` record is typed as `[G in GatewayType]`, so TypeScript
-  shows an error if you add a gateway to the registry but forget to add it here.
-</Callout>
-
-### 7. Configure your app
-
-Set the gateway in `chat.config.ts`. Values omitted here come from the defaults you registered in the previous step:
-
-```ts title="chat.config.ts"
-const config: ConfigInput = {
-  ai: {
-    gateway: "my-gateway",
-  },
-};
-```
-
-Add the env vars to `.env.local`:
-
-```bash title=".env.local"
-MY_GATEWAY_BASE_URL=https://api.my-provider.com/v1
-MY_GATEWAY_API_KEY=sk-...
-```
-
-### 8. Verify
-
-```bash
+```sh
 bun test:types
 bun fetch:models
+bun dev
 ```
 
-## Checklist
-
-1. Install the provider SDK (`bun add ...`)
-2. Add env vars to `lib/env-schema.ts` and their requirement to `lib/config-requirements.ts`
-3. Create the gateway class in `lib/ai/gateways/`
-4. Add it to `gatewayRegistry` in `registry.ts`
-5. Add complete gateway defaults in `gateway-model-defaults.ts`
-6. Add the schema variant to `gatewaySchemaMap` and `aiConfigSchema` in `config-schema.ts`
-7. Set `ai.gateway` in `chat.config.ts`
-8. Run `bun test:types` and `bun fetch:models`
+Send a real chat message to verify provider authentication and streaming. Type checks validate the adapter interface and configuration, but cannot verify remote credentials or model availability.
 
 ## Related
 
-- [Gateways Overview](/gateways/overview) for the gateway system architecture
-- [Multi-Model Support](/core/multi-model) for model configuration
+- [Gateways Overview](/gateways/overview)
+- [Multi-Model Support](/core/multi-model)
