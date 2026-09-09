@@ -1,6 +1,6 @@
 {
   "name": "@chat-js/registry",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "description": "ChatJS tool and gateway registry items",
   "license": "Apache-2.0",
   "repository": {
