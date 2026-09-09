@@ -15,7 +15,6 @@
   },
   "include": [
     "*.ts",
-    "gateways/**/*.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
     "../../apps/chat/types/**/*.d.ts",

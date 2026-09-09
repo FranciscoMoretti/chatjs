@@ -2,7 +2,7 @@ import {
 	gatewayDefinitionSchema,
 	type GatewayDefinition,
 } from "@chat-js/gateways/definition";
-import { builtInGateways } from "../../../registry/gateways/catalog";
+import { builtInGateways } from "../../../registry/src/gateways/catalog";
 import { itemAddress, readItem } from "./shadcn";
 export { builtInGateways };
 export interface GatewaySelection {

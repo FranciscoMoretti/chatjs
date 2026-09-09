@@ -41,7 +41,7 @@ it("leaves non-ChatJS Git templates unconfigured through the full create command
 		expect(Bun.spawnSync(["git", ...args], { cwd: source }).exitCode).toBe(0);
 	}
 	const { builtInGateways } = await import(
-		"../../../registry/gateways/catalog"
+		"../../../registry/src/gateways/catalog"
 	);
 	await writeFile(
 		join(source, "gateway.json"),

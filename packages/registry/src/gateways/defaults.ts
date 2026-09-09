@@ -1,9 +1,9 @@
 import type { GatewayModelDefaults } from "@chat-js/gateways/defaults";
-import type { LiteLLMGateway } from "./litellm.ts";
-import type { OpenAIGateway } from "./openai.ts";
-import type { OpenAICompatibleGateway } from "./openai-compatible.ts";
-import type { OpenRouterGateway } from "./openrouter.ts";
-import type { VercelGateway } from "./vercel.ts";
+import type { LiteLLMGateway } from "./litellm/gateway.ts";
+import type { OpenAIGateway } from "./openai/gateway.ts";
+import type { OpenAICompatibleGateway } from "./openai-compatible/gateway.ts";
+import type { OpenRouterGateway } from "./openrouter/gateway.ts";
+import type { VercelGateway } from "./vercel/gateway.ts";
 
 type Gateways = {
   vercel: VercelGateway;

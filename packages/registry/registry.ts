@@ -1,5 +1,5 @@
 import { registrySchema, type RegistryItem } from "shadcn/schema";
-import { builtInGateways } from "./gateways/catalog";
+import { builtInGateways } from "./src/gateways/catalog";
 import { toolDefinitionSchema } from "./metadata";
 
 export const toolItems = [
@@ -41,7 +41,7 @@ export const toolItems = [
 				}),
 			},
 			files: ["tool.ts", "renderer.tsx"].map((file) => ({
-				path: `src/${definition.id}/${file}`,
+				path: `src/tools/${definition.id}/${file}`,
 				type: "registry:file",
 				target: `~/tools/chatjs/${definition.id}/${file}`,
 			})),
@@ -59,7 +59,7 @@ export const registry = registrySchema.parse({
 			type: "registry:item",
 			dependencies: ["ai"],
 			files: [["tool-part.ts", "lib/tool-part.ts"]].map(([source, target]) => ({
-				path: `src/toolkit-renderer/${source}`,
+				path: `src/tools/toolkit-renderer/${source}`,
 				type: "registry:file",
 				target: `~/tools/chatjs/_shared/${target}`,
 			})),
