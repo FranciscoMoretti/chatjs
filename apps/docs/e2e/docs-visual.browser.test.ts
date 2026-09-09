@@ -3,6 +3,8 @@ import { expect, test } from "vitest";
 
 const pages = [
 	{ name: "home", path: "/docs" },
+	{ name: "registry", path: "/docs/core/registry" },
+	{ name: "tools", path: "/docs/tools/authoring" },
 	{ name: "quickstart", path: "/docs/quickstart" },
 	{ name: "changelog", path: "/docs/changelog" },
 	{ name: "cookbook", path: "/docs/cookbook" },
