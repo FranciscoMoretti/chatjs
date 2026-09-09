@@ -1,5 +1,13 @@
 # @chatjs/chat
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [[`18db694`](https://github.com/FranciscoMoretti/chat-js/commit/18db694b9b67263904707a85f93673f494ea0e6d), [`ea73556`](https://github.com/FranciscoMoretti/chat-js/commit/ea73556a6d3805687ba9dcf755d9d766376dcddf), [`5b6664e`](https://github.com/FranciscoMoretti/chat-js/commit/5b6664e7b846851228605933160281b07a4b0ce2)]:
+  - @chat-js/thread@0.2.0
+  - @chat-js/gateways@0.2.0
+
 ## 0.2.1
 
 ### Patch Changes

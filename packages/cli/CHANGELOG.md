@@ -1,5 +1,33 @@
 # @chat-js/cli
 
+## 1.0.0
+
+### Major Changes
+
+- [#346](https://github.com/FranciscoMoretti/chat-js/pull/346) [`2962417`](https://github.com/FranciscoMoretti/chat-js/commit/296241729e7235be9e91149f37f79b7dfb678fb7) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - Build standard registry JSON from tested TypeScript sources using shadcn. Use
+  shadcn for gateway/tool installation and generate typed registrations from local
+  tool descriptors. Add `chat-js sync` and separate custom registration modules.
+
+  Registry v1 publishes `dist/r/`; historical v0 npm artifacts keep their legacy
+  format. Publish registry v1 and gateway contracts before promoting the CLI.
+  Remove `--registry`, `--no-install`, `--package-manager`, and `paths.tools` in
+  favor of standard namespaces, immediate installation, package-manager detection,
+  and explicit registry targets. Known legacy built-in registrations migrate on sync.
+
+### Minor Changes
+
+- [#308](https://github.com/FranciscoMoretti/chat-js/pull/308) [`18db694`](https://github.com/FranciscoMoretti/chat-js/commit/18db694b9b67263904707a85f93673f494ea0e6d) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - Upgrade ChatJS and generated applications to AI SDK 7 and provider v4. Thread now requires ai >=7.0.93 and @ai-sdk/react >=4.0.96 within their current majors, with Node >=22. Preserve canonical assistant identity, restored tool ownership, and errors across reconnects.
+
+- [#332](https://github.com/FranciscoMoretti/chat-js/pull/332) [`5b6664e`](https://github.com/FranciscoMoretti/chat-js/commit/5b6664e7b846851228605933160281b07a4b0ce2) Thanks [@FranciscoMoretti](https://github.com/FranciscoMoretti)! - Select AI gateways during ChatJS creation through shadcn-format registry items,
+  including external registry URLs. Install only the selected adapter source and
+  its declared dependencies. Keep shared contracts and runtime utilities in
+  @chat-js/gateways, and validate configuration against the installed adapter.
+
+### Patch Changes
+
+- Updated dependencies [[`ea73556`](https://github.com/FranciscoMoretti/chat-js/commit/ea73556a6d3805687ba9dcf755d9d766376dcddf), [`5b6664e`](https://github.com/FranciscoMoretti/chat-js/commit/5b6664e7b846851228605933160281b07a4b0ce2)]:
+  - @chat-js/gateways@0.2.0
+
 ## 0.8.0
 
 ### Minor Changes
